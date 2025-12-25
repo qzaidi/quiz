@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia Master</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-background"></div>
+    <div class="app-container">
+        <header>
+            <h1>Trivia Master</h1>
+            <button id="admin-login-btn" onclick="window.location.href='admin.html'" class="icon-btn">⚙️</button>
+        </header>
+
+        <main id="main-content">
+            <!-- Home View: List of Quizzes -->
+            <section id="home-view" class="view active">
+                <h2>Available Quizzes</h2>
+                <div id="quiz-list" class="quiz-grid">
+                    <!-- Quizzes injected here -->
+                </div>
+            </section>
+
+            <!-- Lobby View: Enter Name & Wait -->
+            <section id="lobby-view" class="view hidden">
+                <button class="back-btn" onclick="showHome()">← Back to Quizzes</button>
+                <div class="lobby-card">
+                    <h2 id="lobby-quiz-title">Loading...</h2>
+                    <p id="lobby-quiz-desc"></p>
+
+                    <div id="lobby-controls" class="controls-row">
+                        <select id="language-select" class="lang-select hidden" onchange="changeLanguage(this.value)">
+                            <option value="en">English (Default)</option>
+                        </select>
+                        <button id="share-btn" class="share-btn" onclick="shareQuiz()">Share on WhatsApp 📱</button>
+                    </div>
+
+                    <div class="status-badge" id="lobby-status">Checking schedule...</div>
+                    <div id="time-remaining" class="countdown"></div>
+
+                    <div class="participant-count-box">
+                        <span class="dot"></span> <span id="participant-count">0</span> people waiting
+                    </div>
+
+                    <form id="join-form" class="hidden">
+                        <input type="text" id="username" placeholder="Enter your name" required autocomplete="off">
+                        <button type="submit" class="cta-btn">Start Quiz</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Quiz View: Questions -->
+            <section id="quiz-view" class="view hidden">
+                <div class="quiz-header">
+                    <div class="timer">Time: <span id="quiz-timer">00:00</span></div>
+                    <div class="progress">Question <span id="current-q-num">1</span>/<span id="total-q-num">5</span>
+                    </div>
+                </div>
+
+                <div class="question-card">
+                    <img id="question-image" src="" alt="Question Image" class="question-img hidden">
+                    <h3 id="question-text">Question text...</h3>
+
+                    <button id="hint-btn" class="hint-toggle">💡 Need a hint?</button>
+                    <p id="hint-text" class="hint-content hidden"></p>
+
+                    <div id="options-container" class="options-grid">
+                        <!-- Options injected here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Leaderboard View -->
+            <section id="result-view" class="view hidden">
+                <div class="result-card">
+                    <h2>Quiz Completed!</h2>
+                    <div class="score-display">
+                        <span class="score-label">Your Score</span>
+                        <span id="final-score" class="score-value">0/0</span>
+                    </div>
+                    <button class="cta-btn secondary" onclick="showHome()">Home</button>
+
+                    <h3>Leaderboard</h3>
+                    <ul id="leaderboard-list" class="leaderboard">
+                        <!-- Rankings injected here -->
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

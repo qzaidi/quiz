@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Trivia Master</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="lib/jquery.dataTables.min.css">
+</head>
+
+<body>
+    <div class="app-background"></div>
+    <div class="app-container">
+        <header>
+            <h1>Trivia Master - Admin</h1>
+            <button onclick="window.location.href='index.html'" class="small-btn">← Public Site</button>
+        </header>
+
+        <main id="main-content">
+            <!-- Admin Login View -->
+            <section id="admin-login-view" class="view active">
+                <div class="lobby-card">
+                    <h2>Admin Access</h2>
+                    <form id="admin-login-form">
+                        <input type="password" id="admin-password" placeholder="Enter Admin Password" required>
+                        <button type="submit" class="cta-btn">Login</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Admin Dashboard View -->
+            <section id="admin-dashboard-view" class="view hidden">
+                <div class="dashboard-header">
+                    <h2>Admin Dashboard</h2>
+                    <div>
+                        <button onclick="showAdminTables()" class="small-btn">📊 Tables</button>
+                        <button onclick="logout()" class="small-btn">Logout</button>
+                    </div>
+                </div>
+
+                <div class="admin-panel">
+                    <h3>Create New Quiz</h3>
+                    <form id="create-quiz-form">
+                        <input type="text" id="new-quiz-title" placeholder="Quiz Title" required>
+                        <textarea id="new-quiz-desc" placeholder="Description" rows="2"></textarea>
+                        <label>Start Time (ISO/Local):</label>
+                        <input type="datetime-local" id="new-quiz-time" required>
+
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="new-quiz-visible" checked>
+                            <label for="new-quiz-visible">Publicly Visible (Uncheck to hide)</label>
+                        </div>
+
+                        <h4>Theme Settings</h4>
+                        <div class="theme-inputs">
+                            <input type="color" id="theme-primary" value="#8b5cf6" title="Primary Color">
+                            <input type="color" id="theme-bg" value="#0f172a" title="Background Color">
+                            <input type="text" id="theme-img" placeholder="Background Image URL (Optional)">
+                        </div>
+
+                        <button type="submit" class="cta-btn">Create Quiz</button>
+                    </form>
+                </div>
+
+                <div class="admin-panel">
+                    <h3>Manage Quizzes</h3>
+                    <div id="admin-quiz-list" class="admin-list"></div>
+                </div>
+
+                <!-- Hidden until a quiz is selected to add questions -->
+                <div id="add-questions-panel" class="admin-panel hidden">
+                    <h3>Add Question to: <span id="selected-quiz-title"></span></h3>
+                    <form id="add-question-form">
+                        <div class="lang-tabs" id="q-lang-tabs">
+                            <button type="button" class="tab active" onclick="switchTab('en')">English</button>
+                            <button type="button" class="tab" onclick="addLangTab()">+ Add Language</button>
+                        </div>
+
+                        <div id="lang-inputs-container">
+                            <!-- Default English Inputs -->
+                            <div class="lang-input-group active" data-lang="en">
+                                <textarea id="q-text" placeholder="Question Text (English)" required></textarea>
+                                <input type="text" id="q-hint" placeholder="Hint (English, Optional)">
+                                <div id="new-options-container">
+                                    <input type="text" class="q-option" placeholder="Option 1" required>
+                                    <input type="text" class="q-option" placeholder="Option 2" required>
+                                    <input type="text" class="q-option" placeholder="Option 3" required>
+                                    <input type="text" class="q-option" placeholder="Option 4" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="text" id="q-image" placeholder="Image URL (Shared for all languages)">
+
+                        <label>Correct Option Index (0-3):</label>
+                        <input type="number" id="q-correct" min="0" max="3" value="0" required>
+
+                        <button type="submit" class="cta-btn secondary">Add Question</button>
+                        <button type="button" onclick="doneAddingQuestions()" class="small-btn">Done</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Admin Tables View -->
+            <section id="admin-tables-view" class="view hidden">
+                <div class="dashboard-header">
+                    <h2>Data Management</h2>
+                    <button onclick="showAdminDashboard()" class="small-btn">← Back to Dashboard</button>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTableTab('quizzes')">Quizzes</button>
+                    <button class="tab" onclick="switchTableTab('questions')">Questions</button>
+                </div>
+
+                <div id="table-quizzes-container" class="table-container">
+                    <table id="quizzes-table" class="display" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Start Time</th>
+                                <th>Visible</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div id="table-questions-container" class="table-container hidden">
+                    <table id="questions-table" class="display" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Quiz</th>
+                                <th>Text</th>
+                                <th>Correct</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <!-- Edit Modal -->
+        <div id="edit-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+                <h3 id="modal-title">Edit Item</h3>
+                <form id="edit-form"></form>
+            </div>
+        </div>
+    </div>
+
+    <script src="lib/jquery.min.js"></script>
+    <script src="lib/jquery.dataTables.min.js"></script>
+    <script src="admin.js"></script>
+</body>
+
+</html>
