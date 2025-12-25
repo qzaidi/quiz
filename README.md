@@ -50,7 +50,12 @@ A modern, real-time trivia quiz application built with Node.js, Express, and Van
 
 ## Deployment (Docker)
 
-This project includes a production-ready Docker setup with Nginx and Let's Encrypt SSL.
+This project includes a production-ready Docker setup with Nginx and Let's Encrypt SSL. You can also test locally with docker though, by building and running with
+
+```
+    docker compose build
+    docker compose run --service-ports
+```
 
 ### Prerequisites
 - Docker & Docker Compose installed on the server.
