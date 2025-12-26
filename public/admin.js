@@ -20,22 +20,47 @@ function switchView(viewName) {
     views[viewName].classList.add('active');
 }
 
+// Helper function to handle API errors
+async function handleApiResponse(res, successMessage = null) {
+    if (res.ok) {
+        if (successMessage) alert(successMessage);
+        return true;
+    } else if (res.status === 401) {
+        alert('Authentication failed. Please log in again.');
+        logout();
+        return false;
+    } else {
+        try {
+            const error = await res.json();
+            alert(`Error: ${error.error || error.message || 'Unknown error occurred'}`);
+        } catch {
+            alert(`Error: ${res.statusText || 'Request failed'}`);
+        }
+        return false;
+    }
+}
+
 // -- Admin Login --
 document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const pwd = document.getElementById('admin-password').value;
 
-    const res = await fetch(`${API_URL}/admin/login`, {
-        method: 'POST',
-        headers: { 'x-admin-password': pwd }
-    });
+    try {
+        const res = await fetch(`${API_URL}/admin/login`, {
+            method: 'POST',
+            headers: { 'x-admin-password': pwd }
+        });
 
-    if (res.ok) {
-        adminToken = pwd;
-        localStorage.setItem('adminToken', pwd);
-        showAdminDashboard();
-    } else {
-        alert('Invalid Password');
+        if (res.ok) {
+            adminToken = pwd;
+            localStorage.setItem('adminToken', pwd);
+            showAdminDashboard();
+        } else {
+            alert('Invalid Password');
+        }
+    } catch (error) {
+        alert('Network error. Please check your connection.');
+        console.error(error);
     }
 });
 
@@ -59,33 +84,53 @@ async function showAdminDashboard() {
 }
 
 async function loadAdminQuizzes() {
-    const res = await fetch(`${API_URL}/quizzes`, { headers: getAdminHeaders() });
-    const quizzes = await res.json();
-    const list = document.getElementById('admin-quiz-list');
-    list.innerHTML = '';
+    try {
+        const res = await fetch(`${API_URL}/quizzes`, { headers: getAdminHeaders() });
 
-    quizzes.forEach(q => {
-        const item = document.createElement('div');
-        item.className = 'admin-quiz-item';
-        const viz = q.is_visible ? '' : ' (Hidden)';
-        item.innerHTML = `
-            <span>${q.title}${viz} (${new Date(q.start_time).toLocaleString()})</span>
-            <div class="admin-actions">
-                <button class="small-btn" onclick='openAddQuestion(${JSON.stringify(q).replace(/'/g, "&#39;")})'>+ Question</button>
-                <button class="delete-btn" onclick="deleteQuiz(${q.id})">Delete</button>
-            </div>
-        `;
-        list.appendChild(item);
-    });
+        if (!res.ok) {
+            await handleApiResponse(res);
+            return;
+        }
+
+        const quizzes = await res.json();
+        const list = document.getElementById('admin-quiz-list');
+        list.innerHTML = '';
+
+        quizzes.forEach(q => {
+            const item = document.createElement('div');
+            item.className = 'admin-quiz-item';
+            const viz = q.is_visible ? '' : ' (Hidden)';
+            item.innerHTML = `
+                <span>${q.title}${viz} (${new Date(q.start_time).toLocaleString()})</span>
+                <div class="admin-actions">
+                    <button class="small-btn" onclick='openAddQuestion(${JSON.stringify(q).replace(/'/g, "&#39;")})'>+ Question</button>
+                    <button class="delete-btn" onclick="deleteQuiz(${q.id})">Delete</button>
+                </div>
+            `;
+            list.appendChild(item);
+        });
+    } catch (error) {
+        alert('Failed to load quizzes. Please try again.');
+        console.error(error);
+    }
 }
 
 async function deleteQuiz(id) {
     if (!confirm('Are you sure you want to delete this quiz?')) return;
-    const res = await fetch(`${API_URL}/admin/quizzes/${id}`, {
-        method: 'DELETE',
-        headers: getAdminHeaders()
-    });
-    if (res.ok) loadAdminQuizzes();
+
+    try {
+        const res = await fetch(`${API_URL}/admin/quizzes/${id}`, {
+            method: 'DELETE',
+            headers: getAdminHeaders()
+        });
+
+        if (await handleApiResponse(res, 'Quiz deleted successfully!')) {
+            loadAdminQuizzes();
+        }
+    } catch (error) {
+        alert('Failed to delete quiz. Please try again.');
+        console.error(error);
+    }
 }
 
 // -- Create Quiz Form --
@@ -94,6 +139,7 @@ document.getElementById('create-quiz-form').addEventListener('submit', async (e)
     const title = document.getElementById('new-quiz-title').value;
     const desc = document.getElementById('new-quiz-desc').value;
     const time = document.getElementById('new-quiz-time').value;
+    const endTime = document.getElementById('new-quiz-end-time').value;
     const is_visible = document.getElementById('new-quiz-visible').checked;
     const theme = {
         primaryColor: document.getElementById('theme-primary').value,
@@ -101,16 +147,20 @@ document.getElementById('create-quiz-form').addEventListener('submit', async (e)
         backgroundImageUrl: document.getElementById('theme-img').value
     };
 
-    const res = await fetch(`${API_URL}/admin/quizzes`, {
-        method: 'POST',
-        headers: getAdminHeaders(),
-        body: JSON.stringify({ title, description: desc, start_time: time, theme, is_visible })
-    });
+    try {
+        const res = await fetch(`${API_URL}/admin/quizzes`, {
+            method: 'POST',
+            headers: getAdminHeaders(),
+            body: JSON.stringify({ title, description: desc, start_time: time, end_time: endTime || null, theme, is_visible })
+        });
 
-    if (res.ok) {
-        alert('Quiz Created!');
-        e.target.reset();
-        loadAdminQuizzes();
+        if (await handleApiResponse(res, 'Quiz Created!')) {
+            e.target.reset();
+            loadAdminQuizzes();
+        }
+    } catch (error) {
+        alert('Failed to create quiz. Please try again.');
+        console.error(error);
     }
 });
 
@@ -234,15 +284,19 @@ document.getElementById('add-question-form').addEventListener('submit', async (e
         text, hint, options, correct_index: correct, image_url: image, translations
     };
 
-    const res = await fetch(`${API_URL}/admin/questions`, {
-        method: 'POST',
-        headers: getAdminHeaders(),
-        body: JSON.stringify(body)
-    });
+    try {
+        const res = await fetch(`${API_URL}/admin/questions`, {
+            method: 'POST',
+            headers: getAdminHeaders(),
+            body: JSON.stringify(body)
+        });
 
-    if (res.ok) {
-        alert('Question Added!');
-        resetQuestionForm();
+        if (await handleApiResponse(res, 'Question Added!')) {
+            resetQuestionForm();
+        }
+    } catch (error) {
+        alert('Failed to add question. Please try again.');
+        console.error(error);
     }
 });
 
@@ -254,10 +308,12 @@ function showAdminTables() {
 }
 
 function switchTableTab(tab) {
-    document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.table-container').forEach(c => c.classList.add('hidden'));
+    // Use more specific selectors within admin-tables-view
+    const tablesView = document.getElementById('admin-tables-view');
+    tablesView.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+    tablesView.querySelectorAll('.table-container').forEach(c => c.classList.add('hidden'));
 
-    const tabs = document.querySelector('.tabs').children;
+    const tabs = tablesView.querySelector('.tabs').children;
     if (tab === 'quizzes') {
         tabs[0].classList.add('active');
         document.getElementById('table-quizzes-container').classList.remove('hidden');
@@ -276,7 +332,15 @@ function initDataTables() {
         ajax: {
             url: API_URL + '/quizzes',
             beforeSend: (xhr) => xhr.setRequestHeader('x-admin-password', adminToken),
-            dataSrc: ''
+            dataSrc: '',
+            error: function (xhr, error, code) {
+                if (xhr.status === 401) {
+                    alert('Authentication failed. Please log in again.');
+                    logout();
+                } else {
+                    alert('Failed to load quizzes: ' + (xhr.responseJSON?.error || error));
+                }
+            }
         },
         columns: [
             { data: 'id' },
@@ -297,7 +361,15 @@ function initDataTables() {
         ajax: {
             url: API_URL + '/admin/questions',
             beforeSend: (xhr) => xhr.setRequestHeader('x-admin-password', adminToken),
-            dataSrc: ''
+            dataSrc: '',
+            error: function (xhr, error, code) {
+                if (xhr.status === 401) {
+                    alert('Authentication failed. Please log in again.');
+                    logout();
+                } else {
+                    alert('Failed to load questions: ' + (xhr.responseJSON?.error || error));
+                }
+            }
         },
         columns: [
             { data: 'id' },
@@ -320,7 +392,9 @@ let currentEditId = null;
 let currentEditData = null;
 
 function closeModal() {
-    document.getElementById('edit-modal').classList.add('hidden');
+    const modal = document.getElementById('edit-modal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
 }
 
 function editQuiz(data) {
@@ -334,6 +408,7 @@ function editQuiz(data) {
         <label>Title</label><input id="e-title" value="${data.title}" required>
         <label>Description</label><textarea id="e-desc">${data.description || ''}</textarea>
         <label>Start Time</label><input id="e-time" type="datetime-local" value="${data.start_time}" required>
+        <label>End Time (Optional)</label><input id="e-end-time" type="datetime-local" value="${data.end_time || ''}">
         <div class="checkbox-group">
             <input type="checkbox" id="e-visible" ${data.is_visible ? 'checked' : ''}>
             <label>Visible</label>
@@ -341,7 +416,9 @@ function editQuiz(data) {
         <button type="submit" class="cta-btn">Save Changes</button>
     `;
 
-    document.getElementById('edit-modal').classList.remove('hidden');
+    const modal = document.getElementById('edit-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
 }
 
 function editQuestion(data) {
@@ -359,7 +436,10 @@ function editQuestion(data) {
         <label>Options (JSON)</label><textarea id="e-q-options">${JSON.stringify(data.options)}</textarea>
         <button type="submit" class="cta-btn">Save Changes</button>
     `;
-    document.getElementById('edit-modal').classList.remove('hidden');
+
+    const modal = document.getElementById('edit-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
 }
 
 document.getElementById('edit-form').addEventListener('submit', async (e) => {
@@ -373,6 +453,7 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
             title: document.getElementById('e-title').value,
             description: document.getElementById('e-desc').value,
             start_time: document.getElementById('e-time').value,
+            end_time: document.getElementById('e-end-time').value || null,
             is_visible: document.getElementById('e-visible').checked,
             theme: currentEditData.theme || {},
             languages: currentEditData.languages || ['en']
@@ -389,19 +470,21 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
         };
     }
 
-    const res = await fetch(url, {
-        method: 'PUT',
-        headers: getAdminHeaders(),
-        body: JSON.stringify(body)
-    });
+    try {
+        const res = await fetch(url, {
+            method: 'PUT',
+            headers: getAdminHeaders(),
+            body: JSON.stringify(body)
+        });
 
-    if (res.ok) {
-        alert('Saved!');
-        closeModal();
-        if (currentEditType === 'quiz') quizzesTable.ajax.reload();
-        else questionsTable.ajax.reload();
-    } else {
-        alert('Error saving');
+        if (await handleApiResponse(res, 'Saved!')) {
+            closeModal();
+            if (currentEditType === 'quiz') quizzesTable.ajax.reload();
+            else questionsTable.ajax.reload();
+        }
+    } catch (error) {
+        alert('Failed to save changes. Please try again.');
+        console.error(error);
     }
 });
 

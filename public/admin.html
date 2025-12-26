@@ -47,6 +47,8 @@
                         <textarea id="new-quiz-desc" placeholder="Description" rows="2"></textarea>
                         <label>Start Time (ISO/Local):</label>
                         <input type="datetime-local" id="new-quiz-time" required>
+                        <label>End Time (Optional):</label>
+                        <input type="datetime-local" id="new-quiz-end-time">
 
                         <div class="checkbox-group">
                             <input type="checkbox" id="new-quiz-visible" checked>
@@ -145,16 +147,16 @@
                     </table>
                 </div>
             </section>
-        </main>
 
-        <!-- Edit Modal -->
-        <div id="edit-modal" class="modal hidden">
-            <div class="modal-content">
-                <span class="close-modal" onclick="closeModal()">&times;</span>
-                <h3 id="modal-title">Edit Item</h3>
-                <form id="edit-form"></form>
+            <!-- Edit Modal -->
+            <div id="edit-modal" class="modal hidden" style="display: none;">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeModal()">&times;</span>
+                    <h3 id="modal-title">Edit Item</h3>
+                    <form id="edit-form"></form>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <script src="lib/jquery.min.js"></script>

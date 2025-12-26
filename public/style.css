@@ -1,8 +1,8 @@
 :root {
-    --bg-color: #0f172a;
-    --card-bg: #1e293b;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
     --accent: #8b5cf6;
     --accent-hover: #7c3aed;
     --success: #10b981;
@@ -18,6 +18,9 @@ body {
     margin: 0;
     padding: 0;
     background-color: var(--theme-bg);
+    background-image: url('bg-pattern.png');
+    background-repeat: repeat;
+    background-size: 400px 400px;
     color: var(--text-primary);
     font-family: var(--font-main);
     display: flex;
@@ -37,7 +40,7 @@ body {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    opacity: 0.3;
+    opacity: 0.15;
     pointer-events: none;
     transition: background-image 0.5s;
 }
@@ -124,12 +127,13 @@ h1 {
     border-radius: 12px;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .quiz-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border-color: var(--theme-primary);
 }
 
@@ -151,7 +155,8 @@ h1 {
     padding: 30px;
     border-radius: 16px;
     text-align: center;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     margin-bottom: 20px;
 }
 
@@ -167,15 +172,31 @@ h1 {
     display: inline-block;
     padding: 5px 12px;
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.05);
     font-size: 0.85em;
     color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.status-badge.live {
+    background: var(--success);
+    color: white;
+}
+
+.status-badge.upcoming {
+    background: #3b82f6;
+    color: white;
+}
+
+.status-badge.archived {
+    background: #64748b;
+    color: white;
 }
 
 .participant-count-box {
     margin: 20px 0;
     padding: 10px;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.03);
     border-radius: 8px;
     display: inline-flex;
     align-items: center;
@@ -201,9 +222,9 @@ input[type="datetime-local"] {
     box-sizing: border-box;
     padding: 12px;
     border-radius: 8px;
-    border: 1px solid #334155;
-    background: #0f172a;
-    color: white;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: var(--text-primary);
     font-size: 1.1em;
     margin-bottom: 15px;
     outline: none;
@@ -245,16 +266,21 @@ input[type="color"] {
 .cta-btn.secondary {
     background: transparent;
     border: 1px solid var(--text-secondary);
+    color: var(--text-primary);
     margin-top: 10px;
 }
 
 .small-btn {
     padding: 5px 10px;
-    background: #334155;
-    color: white;
+    background: #e2e8f0;
+    color: var(--text-primary);
     border: none;
     border-radius: 4px;
     cursor: pointer;
+}
+
+.small-btn:hover {
+    background: #cbd5e1;
 }
 
 .back-btn {
@@ -294,24 +320,31 @@ input[type="color"] {
 }
 
 .option-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     padding: 15px;
     border-radius: 10px;
-    color: white;
+    color: var(--text-primary);
     cursor: pointer;
     text-align: left;
     transition: all 0.2s;
 }
 
 .option-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(139, 92, 246, 0.1);
     border-color: var(--theme-primary);
 }
 
 .option-btn.selected {
     background: var(--theme-primary);
     border-color: var(--theme-primary);
+}
+
+.option-btn.correct-answer {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+    font-weight: 600;
 }
 
 /* Hints */
@@ -378,13 +411,14 @@ input[type="color"] {
 }
 
 .admin-quiz-item {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.03);
     padding: 10px;
     border-radius: 6px;
     margin-bottom: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .admin-actions {
@@ -437,9 +471,9 @@ input[type="color"] {
 .lang-select {
     padding: 8px;
     border-radius: 8px;
-    border: 1px solid #334155;
-    background: #0f172a;
-    color: white;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: var(--text-primary);
 }
 
 .checkbox-group {

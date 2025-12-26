@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Get all quizzes
 router.get('/quizzes', (req, res) => {
-    let query = 'SELECT id, title, description, start_time, theme, is_visible, languages FROM quizzes';
+    let query = 'SELECT id, title, description, start_time, end_time, theme, is_visible, languages FROM quizzes';
 
     const adminPwd = req.headers['x-admin-password'];
     if (adminPwd !== ADMIN_PASSWORD) {

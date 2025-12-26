@@ -13,10 +13,10 @@ router.post('/login', (req, res) => {
 
 // Create Quiz
 router.post('/quizzes', (req, res) => {
-    const { title, description, start_time, theme, is_visible } = req.body;
+    const { title, description, start_time, end_time, theme, is_visible } = req.body;
     const visibility = is_visible === undefined ? 1 : (is_visible ? 1 : 0);
-    const stmt = db.prepare('INSERT INTO quizzes (title, description, start_time, theme, is_visible, languages) VALUES (?, ?, ?, ?, ?, ?)');
-    const info = stmt.run(title, description, start_time, JSON.stringify(theme), visibility, '["en"]');
+    const stmt = db.prepare('INSERT INTO quizzes (title, description, start_time, end_time, theme, is_visible, languages) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    const info = stmt.run(title, description, start_time, end_time || null, JSON.stringify(theme), visibility, '["en"]');
     res.json({ id: info.lastInsertRowid });
 });
 
@@ -60,18 +60,18 @@ router.get('/questions', (req, res) => {
 
 // Update Quiz
 router.put('/quizzes/:id', (req, res) => {
-    const { title, description, start_time, theme, is_visible, languages } = req.body;
+    const { title, description, start_time, end_time, theme, is_visible, languages } = req.body;
     const id = req.params.id;
 
     const visibility = (is_visible === true || is_visible === 1 || is_visible === '1') ? 1 : 0;
 
     const stmt = db.prepare(`
         UPDATE quizzes 
-        SET title = ?, description = ?, start_time = ?, theme = ?, is_visible = ?, languages = ?
+        SET title = ?, description = ?, start_time = ?, end_time = ?, theme = ?, is_visible = ?, languages = ?
         WHERE id = ?
     `);
 
-    stmt.run(title, description, start_time, JSON.stringify(theme || {}), visibility, JSON.stringify(languages || ['en']), id);
+    stmt.run(title, description, start_time, end_time || null, JSON.stringify(theme || {}), visibility, JSON.stringify(languages || ['en']), id);
     res.json({ success: true });
 });
 

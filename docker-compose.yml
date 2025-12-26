@@ -7,6 +7,7 @@ services:
       - ./quiz.db:/usr/src/app/quiz.db
     environment:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    # - DEBUG=true
     ports:
       - "3000:3000"
 

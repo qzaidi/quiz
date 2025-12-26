@@ -65,6 +65,8 @@ async function loadQuizzes() {
 
         quizzes.forEach(q => {
             const start = new Date(q.start_time);
+            const end = q.end_time ? new Date(q.end_time) : null;
+            const now = new Date();
             const card = document.createElement('div');
             card.className = 'quiz-card';
 
@@ -72,9 +74,23 @@ async function loadQuizzes() {
                 card.style.borderColor = q.theme.primaryColor;
             }
 
+            // Determine quiz status
+            let statusBadge = '';
+            let timeInfo = '';
+            if (end && now > end) {
+                statusBadge = '<span class="status-badge archived">Archived</span>';
+                timeInfo = `Ended: ${end.toLocaleString()}`;
+            } else if (now < start) {
+                statusBadge = '<span class="status-badge upcoming">Upcoming</span>';
+                timeInfo = `Starts: ${start.toLocaleString()}`;
+            } else {
+                statusBadge = '<span class="status-badge live">Live</span>';
+                timeInfo = `Started: ${start.toLocaleString()}`;
+            }
+
             card.innerHTML = `
-                <h3>${q.title}</h3>
-                <div class="quiz-time">Starts: ${start.toLocaleString()}</div>
+                <h3>${q.title} ${statusBadge}</h3>
+                <div class="quiz-time">${timeInfo}</div>
                 <p>${q.description || ''}</p>
             `;
             card.onclick = () => showLobby(q);
@@ -136,6 +152,15 @@ function showLobby(quiz) {
     const url = new URL(window.location);
     url.searchParams.set('quizId', quiz.id);
     window.history.pushState({}, '', url);
+
+    // Check if quiz is archived
+    const now = new Date();
+    const end = quiz.end_time ? new Date(quiz.end_time) : null;
+    if (end && now > end) {
+        // Show archived quiz in review mode
+        showArchivedQuiz(quiz);
+        return;
+    }
 
     switchView('lobby');
     document.getElementById('lobby-quiz-title').textContent = quiz.title;
@@ -355,6 +380,19 @@ async function finishQuiz() {
 
 async function showResult(score, total) {
     switchView('result');
+
+    // Show the score display section for normal quiz completion
+    const scoreDisplay = document.querySelector('.score-display');
+    if (scoreDisplay) {
+        scoreDisplay.style.display = 'block';
+    }
+
+    // Update the title
+    const resultTitle = document.querySelector('#result-view h2');
+    if (resultTitle) {
+        resultTitle.textContent = 'Quiz Completed!';
+    }
+
     document.getElementById('final-score').textContent = `${score}/${total}`;
 
     const res = await fetch(`${API_URL}/leaderboard/${currentQuiz.id}`);
@@ -391,6 +429,145 @@ function shareQuiz() {
     const url = window.location.href;
     const fullUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
     window.open(fullUrl, '_blank');
+}
+
+// -- Archived Quiz Review --
+async function showArchivedQuiz(quiz) {
+    try {
+        // Fetch questions
+        const res = await fetch(`${API_URL}/quiz/${quiz.id}/questions`);
+        if (!res.ok) throw new Error('Failed to load questions');
+
+        currentQuestions = await res.json();
+        currentQuestionIndex = 0;
+
+        switchView('quiz');
+        renderArchivedQuestion();
+
+        // Load leaderboard
+        const lbRes = await fetch(`${API_URL}/leaderboard/${quiz.id}`);
+        const leaders = await lbRes.json();
+
+        // Show leaderboard in result view after questions
+        setTimeout(() => {
+            showArchivedLeaderboard(leaders);
+        }, 100);
+
+    } catch (err) {
+        alert("Could not load archived quiz: " + err.message);
+        showHome();
+    }
+}
+
+function renderArchivedQuestion() {
+    const q = currentQuestions[currentQuestionIndex];
+    document.getElementById('current-q-num').textContent = currentQuestionIndex + 1;
+    document.getElementById('total-q-num').textContent = currentQuestions.length;
+
+    let qText = q.text;
+    let qHint = q.hint;
+    let qOptions = q.options;
+
+    // Apply translation
+    if (currentLanguage !== 'en' && q.translations && q.translations[currentLanguage]) {
+        const t = q.translations[currentLanguage];
+        if (t.text) qText = t.text;
+        if (t.hint) qHint = t.hint;
+        if (t.options) qOptions = t.options;
+    }
+
+    document.getElementById('question-text').textContent = qText + ' (Archived - Review Only)';
+    document.getElementById('quiz-timer').textContent = 'Archived';
+
+    // Image
+    const imgEl = document.getElementById('question-image');
+    if (q.image_url) {
+        imgEl.src = q.image_url;
+        imgEl.classList.remove('hidden');
+    } else {
+        imgEl.classList.add('hidden');
+    }
+
+    // Hint
+    const hintBtn = document.getElementById('hint-btn');
+    const hintText = document.getElementById('hint-text');
+    hintText.classList.remove('hidden');
+
+    if (qHint) {
+        hintBtn.classList.add('hidden');
+        hintText.textContent = 'Hint: ' + qHint;
+    } else {
+        hintBtn.classList.add('hidden');
+        hintText.classList.add('hidden');
+    }
+
+    // Options - show correct answer
+    const container = document.getElementById('options-container');
+    container.innerHTML = '';
+
+    qOptions.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        if (idx === q.correct_index) {
+            btn.classList.add('correct-answer');
+            btn.textContent = '✓ ' + opt + ' (Correct Answer)';
+        } else {
+            btn.textContent = opt;
+            btn.style.opacity = '0.6';
+        }
+        btn.disabled = true;
+        btn.style.cursor = 'default';
+
+        // Navigate to next question on click
+        if (currentQuestionIndex < currentQuestions.length - 1) {
+            btn.onclick = () => {
+                currentQuestionIndex++;
+                renderArchivedQuestion();
+            };
+            btn.style.cursor = 'pointer';
+        } else {
+            btn.onclick = () => showArchivedLeaderboard();
+        }
+
+        container.appendChild(btn);
+    });
+}
+
+async function showArchivedLeaderboard(leaders = null) {
+    if (!leaders) {
+        const res = await fetch(`${API_URL}/leaderboard/${currentQuiz.id}`);
+        leaders = await res.json();
+    }
+
+    switchView('result');
+
+    // Hide the score display section for archived quizzes
+    const scoreDisplay = document.querySelector('.score-display');
+    if (scoreDisplay) {
+        scoreDisplay.style.display = 'none';
+    }
+
+    // Update the title
+    const resultTitle = document.querySelector('#result-view h2');
+    if (resultTitle) {
+        resultTitle.textContent = 'Archived Quiz - Leaderboard';
+    }
+
+    const list = document.getElementById('leaderboard-list');
+    list.innerHTML = '';
+
+    if (leaders.length === 0) {
+        list.innerHTML = '<li>No participants yet</li>';
+    } else {
+        leaders.forEach((l, i) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>#${i + 1} ${l.participant_name}</span>
+                <span>${l.score} pts (${l.time_taken_seconds}s)</span>
+            `;
+            list.appendChild(li);
+        });
+    }
 }
 
 // -- History Navigation --

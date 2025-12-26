@@ -1,6 +1,13 @@
 import Database from 'better-sqlite3';
 
-const db = new Database('quiz.db');
+// Enable verbose query logging if DEBUG is set
+const dbOptions = process.env.DEBUG ? { verbose: console.log } : {};
+const db = new Database('quiz.db', dbOptions);
+
+if (process.env.DEBUG) {
+  console.log('🔍 Database verbose logging enabled');
+}
+
 
 export function initDb() {
   db.exec(`
@@ -9,6 +16,7 @@ export function initDb() {
       title TEXT NOT NULL,
       description TEXT,
       start_time DATETIME NOT NULL,
+      end_time DATETIME,            -- Optional end time for quiz
       theme TEXT,                  -- JSON: { primaryColor, backgroundColor, backgroundImageUrl }
       is_visible INTEGER DEFAULT 1, -- 0 or 1
       languages TEXT DEFAULT '["en"]' -- JSON Array
@@ -36,6 +44,18 @@ export function initDb() {
       FOREIGN KEY (quiz_id) REFERENCES quizzes(id)
     );
   `);
+
+  // Migration: Add end_time column if it doesn't exist
+  try {
+    const columns = db.prepare("PRAGMA table_info(quizzes)").all();
+    const hasEndTime = columns.some(col => col.name === 'end_time');
+    if (!hasEndTime) {
+      db.exec("ALTER TABLE quizzes ADD COLUMN end_time DATETIME");
+      console.log('Migration: Added end_time column to quizzes table');
+    }
+  } catch (e) {
+    console.error('Migration error:', e);
+  }
 }
 
 export default db;

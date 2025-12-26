@@ -54,7 +54,7 @@ This project includes a production-ready Docker setup with Nginx and Let's Encry
 
 ```
     docker compose build
-    docker compose run --service-ports
+    docker compose run --service-ports app
 ```
 
 ### Prerequisites
