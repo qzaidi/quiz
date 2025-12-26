@@ -266,12 +266,19 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
 async function startQuiz() {
     try {
         const res = await fetch(`${API_URL}/quiz/${currentQuiz.id}/questions`);
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) {
+          console.log("could not get questions for ",currentQuiz.id)
+          throw new Error(await res.text());
+        }
 
         currentQuestions = await res.json();
         currentQuestionIndex = 0;
         userAnswers = {};
         quizTimeSeconds = 0;
+
+        if (currentQuestions.length == 0) {
+          throw new Error("No questions configured for this quiz");
+        }
 
         switchView('quiz');
         renderQuestion();
@@ -451,7 +458,7 @@ async function showArchivedQuiz(quiz) {
         // Show leaderboard in result view after questions
         setTimeout(() => {
             showArchivedLeaderboard(leaders);
-        }, 100);
+        }, 10000);
 
     } catch (err) {
         alert("Could not load archived quiz: " + err.message);
