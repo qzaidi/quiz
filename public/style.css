@@ -525,3 +525,50 @@ input[type="color"] {
     display: block;
     animation: fadeIn 0.3s;
 }
+
+.quiz-cover-img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+/* Quiz List Specifics */
+.quiz-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.quiz-content {
+    flex: 1;
+}
+
+.quiz-list-img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.lobby-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.lobby-header h2 {
+    margin-top: 0;
+}
+
+.lobby-header p {
+    margin: 0;
+    color: var(--text-secondary);
+}

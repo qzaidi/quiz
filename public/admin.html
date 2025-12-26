@@ -45,6 +45,7 @@
                     <form id="create-quiz-form">
                         <input type="text" id="new-quiz-title" placeholder="Quiz Title" required>
                         <textarea id="new-quiz-desc" placeholder="Description" rows="2"></textarea>
+                        <input type="text" id="new-quiz-image" placeholder="Cover Image URL">
                         <label>Start Time (ISO/Local):</label>
                         <input type="datetime-local" id="new-quiz-time" required>
                         <label>End Time (Optional):</label>
@@ -74,6 +75,19 @@
                 <!-- Hidden until a quiz is selected to add questions -->
                 <div id="add-questions-panel" class="admin-panel hidden">
                     <h3>Add Question to: <span id="selected-quiz-title"></span></h3>
+
+                    <div class="bulk-import-section"
+                        style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <h4>📥 Bulk Import via CSV</h4>
+                        <p style="font-size: 0.9em; margin-bottom: 10px; color: #ccc;">
+                            Expected Columns:
+                            <code>question_en, opt1_en, opt2_en, opt3_en, opt4_en, correct_ans_index</code><br>
+                            (Add other languages like <code>question_ur</code>, <code>opt1_ur</code>, etc.)
+                        </p>
+                        <input type="file" id="bulk-upload-file" accept=".csv" style="margin-bottom: 10px;">
+                        <button type="button" onclick="uploadCSV()" class="small-btn">Upload & Import</button>
+                    </div>
+
                     <form id="add-question-form">
                         <div class="lang-tabs" id="q-lang-tabs">
                             <button type="button" class="tab active" onclick="switchTab('en')">English</button>
@@ -93,8 +107,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <input type="text" id="q-image" placeholder="Image URL (Shared for all languages)">
 
                         <label>Correct Option Index (0-3):</label>
                         <input type="number" id="q-correct" min="0" max="3" value="0" required>

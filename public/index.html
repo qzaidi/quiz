@@ -4,7 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trivia Master</title>
+    <title>Trivia Master - Islamic Trivia</title>
+
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:title" content="Trivia Master - Islamic Trivia">
+    <meta property="og:description" content="Test your knowledge with our Islamic Trivia challenges!">
+    <meta property="og:image" content="/logo.png">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="1024">
+    <meta property="og:type" content="website">
+
+    <!-- Favicon -->
+    <link rel="icon" href="logo.png" type="image/png">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -30,8 +42,13 @@
             <section id="lobby-view" class="view hidden">
                 <button class="back-btn" onclick="showHome()">← Back to Quizzes</button>
                 <div class="lobby-card">
-                    <h2 id="lobby-quiz-title">Loading...</h2>
-                    <p id="lobby-quiz-desc"></p>
+                    <div class="lobby-header">
+                        <div>
+                            <h2 id="lobby-quiz-title">Loading...</h2>
+                            <p id="lobby-quiz-desc"></p>
+                        </div>
+                        <img id="lobby-quiz-image" class="quiz-list-img hidden" alt="Quiz Cover">
+                    </div>
 
                     <div id="lobby-controls" class="controls-row">
                         <select id="language-select" class="lang-select hidden" onchange="changeLanguage(this.value)">

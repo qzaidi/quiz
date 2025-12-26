@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Get all quizzes
 router.get('/quizzes', (req, res) => {
-    let query = 'SELECT id, title, description, start_time, end_time, theme, is_visible, languages FROM quizzes';
+    let query = 'SELECT id, title, description, start_time, end_time, theme, is_visible, languages, image_url FROM quizzes';
 
     const adminPwd = req.headers['x-admin-password'];
     if (adminPwd !== ADMIN_PASSWORD) {
@@ -48,7 +48,11 @@ router.post('/join', (req, res) => {
 
     if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
 
-    if (new Date(quiz.start_time) > new Date()) {
+    // Use wall-clock comparison to avoid server timezone mismatches
+    const now = new Date();
+    const localNow = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 19);
+
+    if (quiz.start_time > localNow) {
         return res.status(403).json({ error: 'Quiz has not started yet' });
     }
 
@@ -62,11 +66,15 @@ router.get('/quiz/:id/questions', (req, res) => {
 
     if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
 
-    if (new Date(quiz.start_time) > new Date()) {
+    // Same wall-clock check for fetching questions
+    const now = new Date();
+    const localNow = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 19);
+
+    if (quiz.start_time > localNow) {
         return res.status(403).json({ error: 'Quiz has not started yet' });
     }
 
-    const questions = db.prepare('SELECT id, text, hint, options, image_url, translations FROM questions WHERE quiz_id = ?').all(quizId);
+    const questions = db.prepare('SELECT id, text, hint, options, translations FROM questions WHERE quiz_id = ?').all(quizId);
 
     questions.forEach(q => {
         q.options = JSON.parse(q.options);

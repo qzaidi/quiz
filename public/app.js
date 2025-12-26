@@ -64,8 +64,9 @@ async function loadQuizzes() {
         }
 
         quizzes.forEach(q => {
-            const start = new Date(q.start_time);
-            const end = q.end_time ? new Date(q.end_time) : null;
+            // Interpret server time as UTC
+            const start = new Date(q.start_time.endsWith('Z') ? q.start_time : q.start_time + 'Z');
+            const end = q.end_time ? new Date(q.end_time.endsWith('Z') ? q.end_time : q.end_time + 'Z') : null;
             const now = new Date();
             const card = document.createElement('div');
             card.className = 'quiz-card';
@@ -89,9 +90,12 @@ async function loadQuizzes() {
             }
 
             card.innerHTML = `
-                <h3>${q.title} ${statusBadge}</h3>
-                <div class="quiz-time">${timeInfo}</div>
-                <p>${q.description || ''}</p>
+                <div class="quiz-content">
+                    <h3>${q.title} ${statusBadge}</h3>
+                    <div class="quiz-time">${timeInfo}</div>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em; color: var(--text-secondary);">${q.description || ''}</p>
+                </div>
+                ${q.image_url ? `<img src="${q.image_url}" class="quiz-list-img" alt="${q.title}">` : ''}
             `;
             card.onclick = () => showLobby(q);
             list.appendChild(card);
@@ -155,7 +159,8 @@ function showLobby(quiz) {
 
     // Check if quiz is archived
     const now = new Date();
-    const end = quiz.end_time ? new Date(quiz.end_time) : null;
+    const tEnd = quiz.end_time;
+    const end = tEnd ? new Date(tEnd.endsWith('Z') ? tEnd : tEnd + 'Z') : null;
     if (end && now > end) {
         // Show archived quiz in review mode
         showArchivedQuiz(quiz);
@@ -165,6 +170,22 @@ function showLobby(quiz) {
     switchView('lobby');
     document.getElementById('lobby-quiz-title').textContent = quiz.title;
     document.getElementById('lobby-quiz-desc').textContent = quiz.description;
+
+    // Show Image if exists
+    const imgEl = document.getElementById('lobby-quiz-image');
+    if (quiz.image_url) {
+        imgEl.src = quiz.image_url;
+        imgEl.classList.remove('hidden');
+    } else {
+        imgEl.classList.add('hidden');
+    }
+
+    // Update OG Image dynamically (client-side attempt)
+    const ogImage = document.querySelector('meta[property="og:image"]');
+    if (ogImage) {
+        ogImage.content = quiz.image_url || '/logo.png';
+    }
+
     document.getElementById('participant-count').textContent = '0';
 
     // Language Selector
@@ -212,7 +233,9 @@ function checkSchedule() {
 
     const update = () => {
         const now = new Date();
-        const start = new Date(currentQuiz.start_time);
+        // Interpret server time as UTC
+        const t = currentQuiz.start_time;
+        const start = new Date(t.endsWith('Z') ? t : t + 'Z');
         const diff = start - now;
 
         const timerEl = document.getElementById('time-remaining');
@@ -267,8 +290,8 @@ async function startQuiz() {
     try {
         const res = await fetch(`${API_URL}/quiz/${currentQuiz.id}/questions`);
         if (!res.ok) {
-          console.log("could not get questions for ",currentQuiz.id)
-          throw new Error(await res.text());
+            console.log("could not get questions for ", currentQuiz.id)
+            throw new Error(await res.text());
         }
 
         currentQuestions = await res.json();
@@ -277,7 +300,7 @@ async function startQuiz() {
         quizTimeSeconds = 0;
 
         if (currentQuestions.length == 0) {
-          throw new Error("No questions configured for this quiz");
+            throw new Error("No questions configured for this quiz");
         }
 
         switchView('quiz');

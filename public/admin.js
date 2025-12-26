@@ -141,6 +141,7 @@ document.getElementById('create-quiz-form').addEventListener('submit', async (e)
     const time = document.getElementById('new-quiz-time').value;
     const endTime = document.getElementById('new-quiz-end-time').value;
     const is_visible = document.getElementById('new-quiz-visible').checked;
+    const image_url = document.getElementById('new-quiz-image').value;
     const theme = {
         primaryColor: document.getElementById('theme-primary').value,
         backgroundColor: document.getElementById('theme-bg').value,
@@ -151,7 +152,7 @@ document.getElementById('create-quiz-form').addEventListener('submit', async (e)
         const res = await fetch(`${API_URL}/admin/quizzes`, {
             method: 'POST',
             headers: getAdminHeaders(),
-            body: JSON.stringify({ title, description: desc, start_time: time, end_time: endTime || null, theme, is_visible })
+            body: JSON.stringify({ title, description: desc, start_time: time, end_time: endTime || null, theme, is_visible, image_url })
         });
 
         if (await handleApiResponse(res, 'Quiz Created!')) {
@@ -181,6 +182,7 @@ function doneAddingQuestions() {
 
 function resetQuestionForm() {
     document.getElementById('add-question-form').reset();
+    document.getElementById('bulk-upload-file').value = '';
     addedLanguages = ['en'];
 
     const container = document.getElementById('lang-inputs-container');
@@ -214,7 +216,7 @@ function renderLangTabs() {
 }
 
 function getLangName(code) {
-    const names = { en: 'English', es: 'Spanish', fr: 'French', de: 'German' };
+    const names = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', ur: 'Urdu', ar: 'Arabic' };
     return names[code] || code.toUpperCase();
 }
 
@@ -265,7 +267,6 @@ document.getElementById('add-question-form').addEventListener('submit', async (e
     const hint = enGroup.querySelector('#q-hint').value;
     const options = Array.from(enGroup.querySelectorAll('.q-option')).map(i => i.value);
 
-    const image = document.getElementById('q-image').value;
     const correct = parseInt(document.getElementById('q-correct').value);
 
     const translations = {};
@@ -281,7 +282,7 @@ document.getElementById('add-question-form').addEventListener('submit', async (e
 
     const body = {
         quiz_id: editingQuizId,
-        text, hint, options, correct_index: correct, image_url: image, translations
+        text, hint, options, correct_index: correct, translations
     };
 
     try {
@@ -409,6 +410,7 @@ function editQuiz(data) {
         <label>Description</label><textarea id="e-desc">${data.description || ''}</textarea>
         <label>Start Time</label><input id="e-time" type="datetime-local" value="${data.start_time}" required>
         <label>End Time (Optional)</label><input id="e-end-time" type="datetime-local" value="${data.end_time || ''}">
+        <label>Image URL</label><input id="e-image-url" value="${data.image_url || ''}">
         <div class="checkbox-group">
             <input type="checkbox" id="e-visible" ${data.is_visible ? 'checked' : ''}>
             <label>Visible</label>
@@ -432,8 +434,8 @@ function editQuestion(data) {
         <label>Text</label><textarea id="e-q-text" required>${data.text}</textarea>
         <label>Hint</label><input id="e-q-hint" value="${data.hint || ''}">
         <label>Correct Index (0-3)</label><input id="e-q-correct" type="number" min="0" max="3" value="${data.correct_index}" required>
-        <label>Image URL</label><input id="e-q-image" value="${data.image_url || ''}">
         <label>Options (JSON)</label><textarea id="e-q-options">${JSON.stringify(data.options)}</textarea>
+        <label>Translations (JSON)</label><textarea id="e-q-translations" rows="4">${JSON.stringify(data.translations || {})}</textarea>
         <button type="submit" class="cta-btn">Save Changes</button>
     `;
 
@@ -455,6 +457,7 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
             start_time: document.getElementById('e-time').value,
             end_time: document.getElementById('e-end-time').value || null,
             is_visible: document.getElementById('e-visible').checked,
+            image_url: document.getElementById('e-image-url').value,
             theme: currentEditData.theme || {},
             languages: currentEditData.languages || ['en']
         };
@@ -464,9 +467,8 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
             text: document.getElementById('e-q-text').value,
             hint: document.getElementById('e-q-hint').value,
             correct_index: parseInt(document.getElementById('e-q-correct').value),
-            image_url: document.getElementById('e-q-image').value,
             options: JSON.parse(document.getElementById('e-q-options').value),
-            translations: currentEditData.translations || {}
+            translations: JSON.parse(document.getElementById('e-q-translations').value || '{}')
         };
     }
 
@@ -491,4 +493,129 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
 // Check if already logged in
 if (adminToken) {
     showAdminDashboard();
+}
+
+// -- Bulk Upload --
+window.uploadCSV = async function () {
+    if (!editingQuizId) return;
+
+    const fileInput = document.getElementById('bulk-upload-file');
+    const file = fileInput.files[0];
+    if (!file) {
+        alert('Please select a CSV file first.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const text = e.target.result;
+        try {
+            const questions = parseCSV(text);
+            if (questions.length === 0) {
+                alert('No valid questions found in CSV.');
+                return;
+            }
+
+            if (!confirm(`Found ${questions.length} questions. Import them?`)) return;
+
+            const res = await fetch(`${API_URL}/admin/questions/bulk`, {
+                method: 'POST',
+                headers: getAdminHeaders(),
+                body: JSON.stringify({ quiz_id: editingQuizId, questions })
+            });
+
+            if (await handleApiResponse(res, `Successfully imported ${questions.length} questions!`)) {
+                fileInput.value = ''; // Reset input
+                // Optional: refresh tables or similar if active
+            }
+        } catch (err) {
+            alert('Error parsing CSV: ' + err.message);
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+};
+
+function parseCSV(csvText) {
+    const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+    if (lines.length < 2) throw new Error('CSV must have a header and at least one data row.');
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const questions = [];
+
+    // Identify columns
+    const colMap = {};
+    headers.forEach((h, i) => {
+        // Match question_xx, optN_xx
+        // We also support 'correct_ans_index'
+        if (h === 'correct_ans_index') {
+            colMap['correct'] = i;
+        } else {
+            const match = h.match(/^(question|opt[1-4])_([a-z]{2})$/);
+            if (match) {
+                const type = match[1]; // question or opt1/opt2...
+                const lang = match[2];
+                if (!colMap[lang]) colMap[lang] = {};
+                colMap[lang][type] = i;
+            }
+        }
+    });
+
+    for (let i = 1; i < lines.length; i++) {
+        // rudimentary CSV split (doesn't handle commas inside quotes efficiently but typical for simple use)
+        // For better CSV parsing, we'd need a library or complex regex, but splitting by comma is implied by the prompt's simplicity.
+        const row = lines[i].split(',').map(c => c.trim());
+        if (row.length < headers.length) continue; // Skip malformed rows
+
+        // Base English data is required
+        if (!colMap['en']) throw new Error('CSV must contain English columns (question_en, opt1_en...)');
+
+        const qText = row[colMap['en'].question];
+        const options = [
+            row[colMap['en'].opt1],
+            row[colMap['en'].opt2],
+            row[colMap['en'].opt3],
+            row[colMap['en'].opt4]
+        ];
+
+        // Validation
+        if (!qText || options.some(o => !o)) continue; // Skip incomplete
+
+        const correctIdx = parseInt(row[colMap['correct']]) || 0;
+
+        const question = {
+            text: qText,
+            hint: '',
+            options: options,
+            correct_index: correctIdx,
+            image_url: '',
+            translations: {}
+        };
+
+        // Process other languages
+        Object.keys(colMap).forEach(lang => {
+            if (lang === 'en' || lang === 'correct') return;
+
+            const lMap = colMap[lang];
+            const lText = row[lMap.question];
+            const lOptions = [
+                row[lMap.opt1],
+                row[lMap.opt2],
+                row[lMap.opt3],
+                row[lMap.opt4]
+            ];
+
+            if (lText && lOptions.every(o => o)) {
+                question.translations[lang] = {
+                    text: lText,
+                    hint: '',
+                    options: lOptions
+                };
+            }
+        });
+
+        questions.push(question);
+    }
+
+    return questions;
 }

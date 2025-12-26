@@ -13,19 +13,19 @@ router.post('/login', (req, res) => {
 
 // Create Quiz
 router.post('/quizzes', (req, res) => {
-    const { title, description, start_time, end_time, theme, is_visible } = req.body;
+    const { title, description, start_time, end_time, theme, is_visible, image_url } = req.body;
     const visibility = is_visible === undefined ? 1 : (is_visible ? 1 : 0);
-    const stmt = db.prepare('INSERT INTO quizzes (title, description, start_time, end_time, theme, is_visible, languages) VALUES (?, ?, ?, ?, ?, ?, ?)');
-    const info = stmt.run(title, description, start_time, end_time || null, JSON.stringify(theme), visibility, '["en"]');
+    const stmt = db.prepare('INSERT INTO quizzes (title, description, start_time, end_time, theme, is_visible, languages, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    const info = stmt.run(title, description, start_time, end_time || null, JSON.stringify(theme), visibility, '["en"]', image_url || null);
     res.json({ id: info.lastInsertRowid });
 });
 
 // Add Question
 router.post('/questions', (req, res) => {
-    const { quiz_id, text, hint, options, correct_index, image_url, translations } = req.body;
+    const { quiz_id, text, hint, options, correct_index, translations } = req.body;
 
-    const stmt = db.prepare('INSERT INTO questions (quiz_id, text, hint, options, correct_index, image_url, translations) VALUES (?, ?, ?, ?, ?, ?, ?)');
-    stmt.run(quiz_id, text, hint, JSON.stringify(options), correct_index, image_url, JSON.stringify(translations || {}));
+    const stmt = db.prepare('INSERT INTO questions (quiz_id, text, hint, options, correct_index, translations) VALUES (?, ?, ?, ?, ?, ?)');
+    stmt.run(quiz_id, text, hint, JSON.stringify(options), correct_index, JSON.stringify(translations || {}));
 
     // Update Quiz languages
     if (translations) {
@@ -42,11 +42,56 @@ router.post('/questions', (req, res) => {
     res.json({ success: true });
 });
 
+// Bulk Import Questions
+router.post('/questions/bulk', (req, res) => {
+    const { quiz_id, questions } = req.body; // questions is array of question objects
+
+    if (!questions || !Array.isArray(questions)) {
+        return res.status(400).json({ error: 'Invalid data format' });
+    }
+
+    const insertStmt = db.prepare('INSERT INTO questions (quiz_id, text, hint, options, correct_index, translations) VALUES (?, ?, ?, ?, ?, ?)');
+
+    // Get current quiz languages
+    const quiz = db.prepare('SELECT languages FROM quizzes WHERE id = ?').get(quiz_id);
+    let quizLangs = JSON.parse(quiz.languages || '["en"]');
+    let langsUpdated = false;
+
+    const runTransaction = db.transaction((questions) => {
+        for (const q of questions) {
+            const { text, hint, options, correct_index, translations } = q;
+            insertStmt.run(quiz_id, text, hint || '', JSON.stringify(options), correct_index, JSON.stringify(translations || {}));
+
+            // Collect languages
+            if (translations) {
+                Object.keys(translations).forEach(l => {
+                    if (!quizLangs.includes(l)) {
+                        quizLangs.push(l);
+                        langsUpdated = true;
+                    }
+                });
+            }
+        }
+
+        if (langsUpdated) {
+            db.prepare('UPDATE quizzes SET languages = ? WHERE id = ?').run(JSON.stringify(quizLangs), quiz_id);
+        }
+    });
+
+    try {
+        runTransaction(questions);
+        res.json({ success: true, count: questions.length });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to import questions' });
+    }
+});
+
 // Get All Questions (for DataTables)
 router.get('/questions', (req, res) => {
     // Join with quizzes to get quiz title for context
     const questions = db.prepare(`
-        SELECT q.id, q.quiz_id, q.text, q.hint, q.options, q.correct_index, q.image_url, q.translations, z.title as quiz_title 
+        SELECT q.id, q.quiz_id, q.text, q.hint, q.options, q.correct_index, q.translations, z.title as quiz_title 
         FROM questions q
         JOIN quizzes z ON q.quiz_id = z.id
     `).all();
@@ -60,33 +105,33 @@ router.get('/questions', (req, res) => {
 
 // Update Quiz
 router.put('/quizzes/:id', (req, res) => {
-    const { title, description, start_time, end_time, theme, is_visible, languages } = req.body;
+    const { title, description, start_time, end_time, theme, is_visible, languages, image_url } = req.body;
     const id = req.params.id;
 
     const visibility = (is_visible === true || is_visible === 1 || is_visible === '1') ? 1 : 0;
 
     const stmt = db.prepare(`
         UPDATE quizzes 
-        SET title = ?, description = ?, start_time = ?, end_time = ?, theme = ?, is_visible = ?, languages = ?
+        SET title = ?, description = ?, start_time = ?, end_time = ?, theme = ?, is_visible = ?, languages = ?, image_url = ?
         WHERE id = ?
     `);
 
-    stmt.run(title, description, start_time, end_time || null, JSON.stringify(theme || {}), visibility, JSON.stringify(languages || ['en']), id);
+    stmt.run(title, description, start_time, end_time || null, JSON.stringify(theme || {}), visibility, JSON.stringify(languages || ['en']), image_url || null, id);
     res.json({ success: true });
 });
 
 // Update Question
 router.put('/questions/:id', (req, res) => {
-    const { text, hint, options, correct_index, image_url, translations } = req.body;
+    const { text, hint, options, correct_index, translations } = req.body;
     const id = req.params.id;
 
     const stmt = db.prepare(`
         UPDATE questions 
-        SET text = ?, hint = ?, options = ?, correct_index = ?, image_url = ?, translations = ?
+        SET text = ?, hint = ?, options = ?, correct_index = ?, translations = ?
         WHERE id = ?
     `);
 
-    stmt.run(text, hint, JSON.stringify(options), correct_index, image_url, JSON.stringify(translations || {}), id);
+    stmt.run(text, hint, JSON.stringify(options), correct_index, JSON.stringify(translations || {}), id);
     res.json({ success: true });
 });
 

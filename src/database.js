@@ -19,7 +19,8 @@ export function initDb() {
       end_time DATETIME,            -- Optional end time for quiz
       theme TEXT,                  -- JSON: { primaryColor, backgroundColor, backgroundImageUrl }
       is_visible INTEGER DEFAULT 1, -- 0 or 1
-      languages TEXT DEFAULT '["en"]' -- JSON Array
+      languages TEXT DEFAULT '["en"]', -- JSON Array
+      image_url TEXT               -- URL for quiz cover/share image
     );
 
     CREATE TABLE IF NOT EXISTS questions (
@@ -29,7 +30,6 @@ export function initDb() {
       hint TEXT,
       options TEXT NOT NULL,       -- JSON array of strings
       correct_index INTEGER NOT NULL,
-      image_url TEXT,
       translations TEXT,           -- JSON: { langCode: { text, hint, options } }
       FOREIGN KEY (quiz_id) REFERENCES quizzes(id)
     );
@@ -45,13 +45,13 @@ export function initDb() {
     );
   `);
 
-  // Migration: Add end_time column if it doesn't exist
+  // Migration: Add image_url column if it doesn't exist
   try {
     const columns = db.prepare("PRAGMA table_info(quizzes)").all();
-    const hasEndTime = columns.some(col => col.name === 'end_time');
-    if (!hasEndTime) {
-      db.exec("ALTER TABLE quizzes ADD COLUMN end_time DATETIME");
-      console.log('Migration: Added end_time column to quizzes table');
+    const hasImageURL = columns.some(col => col.name === 'image_url');
+    if (!hasImageURL) {
+      db.exec("ALTER TABLE quizzes ADD COLUMN image_url TEXT");
+      console.log('Migration: Added image_url column to quizzes table');
     }
   } catch (e) {
     console.error('Migration error:', e);
