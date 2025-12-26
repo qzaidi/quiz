@@ -600,6 +600,58 @@ async function showArchivedLeaderboard(leaders = null) {
     }
 }
 
+window.viewLobbyLeaderboard = async function () {
+    if (!currentQuiz) return;
+
+    try {
+        const res = await fetch(`${API_URL}/leaderboard/${currentQuiz.id}`);
+        const leaders = await res.json();
+
+        switchView('result');
+
+        // Hide score display since we are just viewing
+        const scoreDisplay = document.querySelector('.score-display');
+        if (scoreDisplay) scoreDisplay.style.display = 'none';
+
+        // Update title
+        const resultTitle = document.querySelector('#result-view h2');
+        if (resultTitle) resultTitle.textContent = `${currentQuiz.title} - Leaderboard`;
+
+        // Update Back button behavior regarding where we came from? 
+        // actually showHome() is on the result view button. 
+        // We might want a "Back to Lobby" button if we came from lobby.
+        // For now, the "Home" button is there. Let's change it to "Back" if we can, or just leave it.
+        // The result view has: <button class="cta-btn secondary" onclick="showHome()">Home</button>
+        // We can change this button's text or action temporarily.
+
+        const homeBtn = document.querySelector('#result-view .cta-btn.secondary');
+        if (homeBtn) {
+            homeBtn.textContent = 'Back to Lobby';
+            homeBtn.onclick = () => showLobby(currentQuiz);
+        }
+
+        const list = document.getElementById('leaderboard-list');
+        list.innerHTML = '';
+
+        if (leaders.length === 0) {
+            list.innerHTML = '<li>No participants yet</li>';
+        } else {
+            leaders.forEach((l, i) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>#${i + 1} ${l.participant_name}</span>
+                    <span>${l.score} pts (${l.time_taken_seconds}s)</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+    } catch (e) {
+        console.error(e);
+        alert('Failed to load leaderboard');
+    }
+};
+
 // -- History Navigation --
 window.addEventListener('popstate', () => {
     const urlParams = new URLSearchParams(window.location.search);

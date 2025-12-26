@@ -127,6 +127,7 @@
                 <div class="tabs">
                     <button class="tab active" onclick="switchTableTab('quizzes')">Quizzes</button>
                     <button class="tab" onclick="switchTableTab('questions')">Questions</button>
+                    <button class="tab" onclick="switchTableTab('sessions')">Sessions</button>
                 </div>
 
                 <div id="table-quizzes-container" class="table-container">
@@ -152,6 +153,23 @@
                                 <th>Quiz</th>
                                 <th>Text</th>
                                 <th>Correct</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div id="table-sessions-container" class="table-container hidden">
+                    <table id="sessions-table" class="display" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Quiz</th>
+                                <th>Name</th>
+                                <th>Score</th>
+                                <th>Time</th>
+                                <th>Date</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>

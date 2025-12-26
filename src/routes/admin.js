@@ -151,4 +151,21 @@ router.delete('/quizzes/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// Get All Sessions
+router.get('/sessions', (req, res) => {
+    const sessions = db.prepare(`
+            SELECT s.id, s.quiz_id, s.participant_name, s.score, s.time_taken_seconds, s.completed_at, z.title as quiz_title
+            FROM sessions s
+            JOIN quizzes z ON s.quiz_id = z.id
+            ORDER BY s.completed_at DESC
+        `).all();
+    res.json(sessions);
+});
+
+// Delete Session
+router.delete('/sessions/:id', (req, res) => {
+    db.prepare('DELETE FROM sessions WHERE id = ?').run(req.params.id);
+    res.json({ success: true });
+});
+
 export default router;

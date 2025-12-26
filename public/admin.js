@@ -2,7 +2,7 @@ const API_URL = '/api';
 let adminToken = localStorage.getItem('adminToken') || '';
 let editingQuizId = null;
 let addedLanguages = ['en'];
-let quizzesTable, questionsTable;
+let quizzesTable, questionsTable, sessionsTable;
 
 // -- Views --
 const views = {
@@ -319,10 +319,14 @@ function switchTableTab(tab) {
         tabs[0].classList.add('active');
         document.getElementById('table-quizzes-container').classList.remove('hidden');
         if (quizzesTable) quizzesTable.ajax.reload();
-    } else {
+    } else if (tab === 'questions') {
         tabs[1].classList.add('active');
         document.getElementById('table-questions-container').classList.remove('hidden');
         if (questionsTable) questionsTable.ajax.reload();
+    } else {
+        tabs[2].classList.add('active');
+        document.getElementById('table-sessions-container').classList.remove('hidden');
+        if (sessionsTable) sessionsTable.ajax.reload();
     }
 }
 
@@ -385,6 +389,54 @@ function initDataTables() {
             }
         ]
     });
+
+    sessionsTable = $('#sessions-table').DataTable({
+        ajax: {
+            url: API_URL + '/admin/sessions',
+            beforeSend: (xhr) => xhr.setRequestHeader('x-admin-password', adminToken),
+            dataSrc: '',
+            error: function (xhr, error, code) {
+                if (xhr.status === 401) {
+                    alert('Authentication failed. Please log in again.');
+                    logout();
+                } else {
+                    alert('Failed to load sessions: ' + (xhr.responseJSON?.error || error));
+                }
+            }
+        },
+        columns: [
+            { data: 'id' },
+            { data: 'quiz_title' },
+            { data: 'participant_name' },
+            { data: 'score' },
+            { data: 'time_taken_seconds' },
+            { data: 'completed_at', render: (data) => new Date(data).toLocaleString() },
+            {
+                data: null,
+                render: (data, type, row) => `
+                    <button class="delete-btn" onclick="deleteSession(${row.id})">Delete</button>
+                `
+            }
+        ]
+    });
+}
+
+async function deleteSession(id) {
+    if (!confirm('Are you sure you want to delete this session? This will remove it from the leaderboard.')) return;
+
+    try {
+        const res = await fetch(`${API_URL}/admin/sessions/${id}`, {
+            method: 'DELETE',
+            headers: getAdminHeaders()
+        });
+
+        if (await handleApiResponse(res, 'Session deleted successfully!')) {
+            sessionsTable.ajax.reload();
+        }
+    } catch (error) {
+        alert('Failed to delete session. Please try again.');
+        console.error(error);
+    }
 }
 
 // -- Edit Modal --
