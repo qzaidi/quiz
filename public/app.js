@@ -473,16 +473,6 @@ async function showArchivedQuiz(quiz) {
 
         switchView('quiz');
         renderArchivedQuestion();
-
-        // Load leaderboard
-        const lbRes = await fetch(`${API_URL}/leaderboard/${quiz.id}`);
-        const leaders = await lbRes.json();
-
-        // Show leaderboard in result view after questions
-        setTimeout(() => {
-            showArchivedLeaderboard(leaders);
-        }, 10000);
-
     } catch (err) {
         alert("Could not load archived quiz: " + err.message);
         showHome();
@@ -545,8 +535,8 @@ function renderArchivedQuestion() {
             btn.textContent = opt;
             btn.style.opacity = '0.6';
         }
-        btn.disabled = true;
-        btn.style.cursor = 'default';
+        // btn.disabled = true; // Removed so onclick works for navigation
+        btn.style.cursor = 'pointer';
 
         // Navigate to next question on click
         if (currentQuestionIndex < currentQuestions.length - 1) {
@@ -554,7 +544,6 @@ function renderArchivedQuestion() {
                 currentQuestionIndex++;
                 renderArchivedQuestion();
             };
-            btn.style.cursor = 'pointer';
         } else {
             btn.onclick = () => showArchivedLeaderboard();
         }

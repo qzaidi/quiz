@@ -74,7 +74,14 @@ router.get('/quiz/:id/questions', (req, res) => {
         return res.status(403).json({ error: 'Quiz has not started yet' });
     }
 
-    const questions = db.prepare('SELECT id, text, hint, options, translations FROM questions WHERE quiz_id = ?').all(quizId);
+    let columns = 'id, text, hint, options, translations';
+
+    // If quiz is archived, include correct answer
+    if (quiz.end_time && quiz.end_time < localNow) {
+        columns += ', correct_index';
+    }
+
+    const questions = db.prepare(`SELECT ${columns} FROM questions WHERE quiz_id = ?`).all(quizId);
 
     questions.forEach(q => {
         q.options = JSON.parse(q.options);
