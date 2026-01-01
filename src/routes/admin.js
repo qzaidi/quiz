@@ -181,4 +181,18 @@ router.delete('/sessions/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// Clear Quiz Content (questions and sessions, but keep quiz)
+router.delete('/quizzes/:id/clear', (req, res) => {
+    const id = req.params.id;
+    const deleteQuestions = db.prepare('DELETE FROM questions WHERE quiz_id = ?');
+    const deleteSessions = db.prepare('DELETE FROM sessions WHERE quiz_id = ?');
+
+    db.transaction(() => {
+        deleteQuestions.run(id);
+        deleteSessions.run(id);
+    })();
+
+    res.json({ success: true });
+});
+
 export default router;

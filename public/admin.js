@@ -107,6 +107,7 @@ async function loadAdminQuizzes() {
                 <div class="admin-actions">
                     <button class="small-btn" onclick='openAddQuestion(${JSON.stringify(q).replace(/'/g, "&#39;")})'>+ Question</button>
                     <button class="small-btn" onclick="exportQuizQuestions(${q.id}, '${q.title.replace(/'/g, "\\'")}')">Export CSV</button>
+                    <button class="small-btn" onclick="clearQuizContent(${q.id}, '${q.title.replace(/'/g, "\\'")}')">Clear</button>
                     <button class="delete-btn" onclick="deleteQuiz(${q.id})">Delete</button>
                 </div>
             `;
@@ -135,6 +136,24 @@ async function deleteQuiz(id) {
         console.error(error);
     }
 }
+
+window.clearQuizContent = async function(id, title) {
+    if (!confirm(`Are you sure you want to clear all questions and sessions from "${title}"?\n\nThis will delete all questions and participant data, but the quiz itself will remain.`)) return;
+
+    try {
+        const res = await fetch(`${API_URL}/admin/quizzes/${id}/clear`, {
+            method: 'DELETE',
+            headers: getAdminHeaders()
+        });
+
+        if (await handleApiResponse(res, 'Quiz content cleared successfully!')) {
+            loadAdminQuizzes();
+        }
+    } catch (error) {
+        alert('Failed to clear quiz content. Please try again.');
+        console.error(error);
+    }
+};
 
 async function exportQuizQuestions(quizId, quizTitle) {
     try {
@@ -753,14 +772,14 @@ function parseCSV(csvText) {
     // Identify columns
     const colMap = {};
     headers.forEach((h, i) => {
-        // Match question_xx, optN_xx
+        // Match question_xx, optN_xx, hint_xx
         // We also support 'correct_ans_index'
         if (h === 'correct_ans_index') {
             colMap['correct'] = i;
         } else {
-            const match = h.match(/^(question|opt[1-4])_([a-z]{2})$/);
+            const match = h.match(/^(question|opt[1-4]|hint)_([a-z]{2})$/);
             if (match) {
-                const type = match[1]; // question or opt1/opt2...
+                const type = match[1]; // question, opt1/opt2..., or hint
                 const lang = match[2];
                 if (!colMap[lang]) colMap[lang] = {};
                 colMap[lang][type] = i;
@@ -780,6 +799,7 @@ function parseCSV(csvText) {
         if (!colMap['en']) throw new Error('CSV must contain English columns (question_en, opt1_en...)');
 
         const qText = row[colMap['en'].question];
+        const qHint = colMap['en'] && colMap['en'].hint ? row[colMap['en'].hint] : '';
         const options = [
             row[colMap['en'].opt1],
             row[colMap['en'].opt2],
@@ -794,7 +814,7 @@ function parseCSV(csvText) {
 
         const question = {
             text: qText,
-            hint: '',
+            hint: qHint || '',
             options: options,
             correct_index: correctIdx,
             image_url: '',
@@ -807,6 +827,7 @@ function parseCSV(csvText) {
 
             const lMap = colMap[lang];
             const lText = row[lMap.question];
+            const lHint = lMap.hint ? row[lMap.hint] : '';
             const lOptions = [
                 row[lMap.opt1],
                 row[lMap.opt2],
@@ -817,7 +838,7 @@ function parseCSV(csvText) {
             if (lText && lOptions.every(o => o)) {
                 question.translations[lang] = {
                     text: lText,
-                    hint: '',
+                    hint: lHint || '',
                     options: lOptions
                 };
             }
