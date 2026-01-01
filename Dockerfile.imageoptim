@@ -1,0 +1,10 @@
+FROM alpine:latest
+
+# Install image optimization and resizing tools
+RUN apk add --no-cache \
+    pngcrush \
+    jpegoptim \
+    optipng \
+    imagemagick
+
+WORKDIR /data

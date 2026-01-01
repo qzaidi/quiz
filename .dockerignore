@@ -1,1 +1,39 @@
 node_modules
+npm-debug.log
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.yml
+Dockerfile
+Dockerfile.imageoptim
+.dockerignore
+optimize-images.sh
+public/img.backup
+
+# Documentation
+README.md
+CLAUDE.md
+*.md
+
+# Environment
+.env
+.env.*
+!.env.example
