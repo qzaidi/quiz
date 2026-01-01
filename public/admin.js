@@ -3,6 +3,8 @@ let adminToken = localStorage.getItem('adminToken') || '';
 let editingQuizId = null;
 let addedLanguages = ['en'];
 let quizzesTable, questionsTable, sessionsTable;
+let pendingImportQuestions = []; // Questions pending preview before import
+let previewIndex = 0; // Current preview question index
 
 // -- Views --
 const views = {
@@ -104,6 +106,7 @@ async function loadAdminQuizzes() {
                 <span>${q.title}${viz} (${new Date(q.start_time).toLocaleString()})</span>
                 <div class="admin-actions">
                     <button class="small-btn" onclick='openAddQuestion(${JSON.stringify(q).replace(/'/g, "&#39;")})'>+ Question</button>
+                    <button class="small-btn" onclick="exportQuizQuestions(${q.id}, '${q.title.replace(/'/g, "\\'")}')">Export CSV</button>
                     <button class="delete-btn" onclick="deleteQuiz(${q.id})">Delete</button>
                 </div>
             `;
@@ -131,6 +134,126 @@ async function deleteQuiz(id) {
         alert('Failed to delete quiz. Please try again.');
         console.error(error);
     }
+}
+
+async function exportQuizQuestions(quizId, quizTitle) {
+    try {
+        // Show status
+        const statusDiv = document.getElementById('export-status');
+        const statusText = document.getElementById('export-status-text');
+        statusDiv.classList.remove('hidden');
+        statusText.textContent = 'Fetching questions...';
+
+        // Fetch questions for this quiz
+        const res = await fetch(`${API_URL}/admin/quizzes/${quizId}/questions`, {
+            headers: getAdminHeaders()
+        });
+
+        if (!res.ok) {
+            await handleApiResponse(res);
+            statusDiv.classList.add('hidden');
+            return;
+        }
+
+        const questions = await res.json();
+
+        if (questions.length === 0) {
+            alert('This quiz has no questions to export.');
+            statusDiv.classList.add('hidden');
+            return;
+        }
+
+        statusText.textContent = `Generating CSV for ${questions.length} questions...`;
+
+        // Generate CSV
+        const csv = generateQuestionsCSV(questions);
+
+        // Download
+        const filename = `${quizTitle.replace(/[^a-z0-9]/gi, '_')}_questions.csv`;
+        downloadCSV(csv, filename);
+
+        statusText.textContent = `Exported ${questions.length} questions!`;
+        setTimeout(() => statusDiv.classList.add('hidden'), 2000);
+    } catch (error) {
+        alert('Failed to export questions. Please try again.');
+        console.error(error);
+        document.getElementById('export-status').classList.add('hidden');
+    }
+}
+
+function generateQuestionsCSV(questions) {
+    // Collect all languages from translations
+    const languages = new Set(['en']);
+    questions.forEach(q => {
+        if (q.translations) {
+            Object.keys(q.translations).forEach(lang => languages.add(lang));
+        }
+    });
+
+    const langs = Array.from(languages).sort();
+
+    // Build header row
+    const headers = [];
+    langs.forEach(lang => {
+        headers.push(`question_${lang}`);
+        for (let i = 1; i <= 4; i++) {
+            headers.push(`opt${i}_${lang}`);
+        }
+    });
+    headers.push('correct_ans_index');
+
+    // Build CSV rows
+    const rows = [headers.join(',')];
+
+    questions.forEach(q => {
+        const row = [];
+
+        langs.forEach(lang => {
+            if (lang === 'en') {
+                // English is the base
+                row.push(escapeCSV(q.text || ''));
+                row.push(...(q.options || []).map(o => escapeCSV(o || '')));
+            } else if (q.translations && q.translations[lang]) {
+                // Translation exists
+                const t = q.translations[lang];
+                row.push(escapeCSV(t.text || ''));
+                row.push(...(t.options || []).map(o => escapeCSV(o || '')));
+            } else {
+                // No translation, leave empty
+                row.push('', '', '', '', '');
+            }
+        });
+
+        row.push(q.correct_index || 0);
+        rows.push(row.join(','));
+    });
+
+    return rows.join('\n');
+}
+
+function escapeCSV(value) {
+    // Escape values that contain commas, quotes, or newlines
+    if (typeof value !== 'string') return '';
+    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+        return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+}
+
+function downloadCSV(csvContent, filename) {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
 }
 
 // -- Create Quiz Form --
@@ -216,7 +339,7 @@ function renderLangTabs() {
 }
 
 function getLangName(code) {
-    const names = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', ur: 'Urdu', ar: 'Arabic' };
+    const names = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', ur: 'Urdu (اردو)', fa: 'Farsi (فارسی)', hi: 'Hindi (हिन्दी)', ar: 'Arabic' };
     return names[code] || code.toUpperCase();
 }
 
@@ -568,18 +691,12 @@ window.uploadCSV = async function () {
                 return;
             }
 
-            if (!confirm(`Found ${questions.length} questions. Import them?`)) return;
+            // Store questions for preview
+            pendingImportQuestions = questions;
+            previewIndex = 0;
 
-            const res = await fetch(`${API_URL}/admin/questions/bulk`, {
-                method: 'POST',
-                headers: getAdminHeaders(),
-                body: JSON.stringify({ quiz_id: editingQuizId, questions })
-            });
-
-            if (await handleApiResponse(res, `Successfully imported ${questions.length} questions!`)) {
-                fileInput.value = ''; // Reset input
-                // Optional: refresh tables or similar if active
-            }
+            // Show preview modal
+            showPreviewModal();
         } catch (err) {
             alert('Error parsing CSV: ' + err.message);
             console.error(err);
@@ -589,10 +706,48 @@ window.uploadCSV = async function () {
 };
 
 function parseCSV(csvText) {
+    // Parse CSV with proper handling of quoted fields
+    const parseCSVRow = (row) => {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < row.length; i++) {
+            const char = row[i];
+            const nextChar = row[i + 1];
+
+            if (char === '"') {
+                if (inQuotes && nextChar === '"') {
+                    // Escaped quote ("")
+                    current += '"';
+                    i++; // Skip next quote
+                } else {
+                    // Toggle quote mode
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                // Field separator
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+
+        // Push last field
+        result.push(current.trim());
+
+        return result;
+    };
+
     const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
     if (lines.length < 2) throw new Error('CSV must have a header and at least one data row.');
 
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const headers = parseCSVRow(lines[0]).map(h => {
+        // Remove quotes from header and convert to lowercase
+        return h.replace(/^"|"$/g, '').trim().toLowerCase();
+    });
+
     const questions = [];
 
     // Identify columns
@@ -614,9 +769,11 @@ function parseCSV(csvText) {
     });
 
     for (let i = 1; i < lines.length; i++) {
-        // rudimentary CSV split (doesn't handle commas inside quotes efficiently but typical for simple use)
-        // For better CSV parsing, we'd need a library or complex regex, but splitting by comma is implied by the prompt's simplicity.
-        const row = lines[i].split(',').map(c => c.trim());
+        const row = parseCSVRow(lines[i]).map(field => {
+            // Remove surrounding quotes and unescape internal quotes
+            return field.replace(/^"|"$/g, '').replace(/""/g, '"');
+        });
+
         if (row.length < headers.length) continue; // Skip malformed rows
 
         // Base English data is required
@@ -671,3 +828,72 @@ function parseCSV(csvText) {
 
     return questions;
 }
+
+// -- Preview Modal Functions --
+function showPreviewModal() {
+    const modal = document.getElementById('preview-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    renderPreviewQuestion();
+}
+
+window.closePreviewModal = function() {
+    const modal = document.getElementById('preview-modal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    pendingImportQuestions = [];
+    previewIndex = 0;
+};
+
+window.navigatePreview = function(direction) {
+    const newIndex = previewIndex + direction;
+    if (newIndex >= 0 && newIndex < pendingImportQuestions.length) {
+        previewIndex = newIndex;
+        renderPreviewQuestion();
+    }
+};
+
+function renderPreviewQuestion() {
+    const q = pendingImportQuestions[previewIndex];
+
+    // Update counts
+    document.getElementById('preview-count').textContent = pendingImportQuestions.length;
+    document.getElementById('preview-current').textContent = previewIndex + 1;
+    document.getElementById('preview-total').textContent = pendingImportQuestions.length;
+    document.getElementById('preview-import-count').textContent = pendingImportQuestions.length;
+
+    // Handle hint
+    const hintContainer = document.getElementById('preview-hint-container');
+    if (q.hint) {
+        hintContainer.textContent = 'Hint: ' + q.hint;
+        hintContainer.classList.remove('hidden');
+    } else {
+        hintContainer.classList.add('hidden');
+    }
+
+    // Use common rendering function to render the question
+    renderQuestion(q, 'en', true, false, {
+        questionText: document.getElementById('preview-question-text'),
+        hintText: hintContainer,
+        optionsContainer: document.getElementById('preview-options-container')
+    });
+
+    // Update navigation buttons
+    document.getElementById('preview-prev-btn').disabled = previewIndex === 0;
+    document.getElementById('preview-next-btn').disabled = previewIndex === pendingImportQuestions.length - 1;
+}
+
+window.confirmImport = async function() {
+    if (!editingQuizId || pendingImportQuestions.length === 0) return;
+
+    const res = await fetch(`${API_URL}/admin/questions/bulk`, {
+        method: 'POST',
+        headers: getAdminHeaders(),
+        body: JSON.stringify({ quiz_id: editingQuizId, questions: pendingImportQuestions })
+    });
+
+    if (await handleApiResponse(res, `Successfully imported ${pendingImportQuestions.length} questions!`)) {
+        document.getElementById('bulk-upload-file').value = ''; // Reset input
+        closePreviewModal();
+    }
+};

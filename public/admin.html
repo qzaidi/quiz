@@ -72,6 +72,11 @@
                     <div id="admin-quiz-list" class="admin-list"></div>
                 </div>
 
+                <!-- Export Status -->
+                <div id="export-status" class="admin-panel hidden" style="background: rgba(139, 92, 246, 0.2);">
+                    <p id="export-status-text">Exporting questions...</p>
+                </div>
+
                 <!-- Hidden until a quiz is selected to add questions -->
                 <div id="add-questions-panel" class="admin-panel hidden">
                     <h3>Add Question to: <span id="selected-quiz-title"></span></h3>
@@ -186,11 +191,51 @@
                     <form id="edit-form"></form>
                 </div>
             </div>
+
+            <!-- CSV Preview Modal -->
+            <div id="preview-modal" class="modal hidden" style="display: none;">
+                <div class="modal-content" style="max-width: 800px;">
+                    <span class="close-modal" onclick="closePreviewModal()">&times;</span>
+                    <h3>Preview Questions (<span id="preview-count">0</span>)</h3>
+                    <p style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 20px;">
+                        Review the questions before importing. Use the navigation buttons to browse through all questions.
+                    </p>
+
+                    <!-- Preview Container -->
+                    <div id="preview-container" class="question-card" style="margin-bottom: 20px;">
+                        <div class="quiz-header">
+                            <div class="timer">Preview Mode</div>
+                            <div class="progress">Question <span id="preview-current">1</span>/<span id="preview-total">5</span></div>
+                        </div>
+
+                        <h3 id="preview-question-text">Question text...</h3>
+
+                        <div id="preview-hint-container" class="hint-content hidden">
+                            Hint text...
+                        </div>
+
+                        <div id="preview-options-container" class="options-grid">
+                            <!-- Options will be injected here -->
+                        </div>
+                    </div>
+
+                    <!-- Navigation Controls -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                        <button id="preview-prev-btn" class="cta-btn secondary" onclick="navigatePreview(-1)">← Previous</button>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="closePreviewModal()" class="small-btn">Cancel</button>
+                            <button onclick="confirmImport()" class="cta-btn">Confirm Import (<span id="preview-import-count">0</span> Questions)</button>
+                        </div>
+                        <button id="preview-next-btn" class="cta-btn secondary" onclick="navigatePreview(1)">Next →</button>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
     <script src="lib/jquery.min.js"></script>
     <script src="lib/jquery.dataTables.min.js"></script>
+    <script src="common.js"></script>
     <script src="admin.js"></script>
 </body>
 

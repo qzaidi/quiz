@@ -151,6 +151,19 @@ router.delete('/quizzes/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// Get Questions by Quiz ID
+router.get('/quizzes/:id/questions', (req, res) => {
+    const { id } = req.params;
+    const questions = db.prepare('SELECT * FROM questions WHERE quiz_id = ?').all(id);
+
+    questions.forEach(q => {
+        try { q.options = JSON.parse(q.options); } catch (e) { }
+        try { q.translations = JSON.parse(q.translations); } catch (e) { }
+    });
+
+    res.json(questions);
+});
+
 // Get All Sessions
 router.get('/sessions', (req, res) => {
     const sessions = db.prepare(`

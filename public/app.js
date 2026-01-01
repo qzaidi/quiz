@@ -7,7 +7,8 @@ let userAnswers = {};
 let startTime = null;
 let quizTimerInterval;
 let quizTimeSeconds = 0;
-let currentLanguage = 'en';
+let currentLanguage = 'en';  // Quiz content language (questions, options)
+let currentUILanguage = localStorage.getItem('uiLanguage') || 'en';  // UI labels language
 
 // -- Views --
 const views = {
@@ -15,6 +16,80 @@ const views = {
     lobby: document.getElementById('lobby-view'),
     quiz: document.getElementById('quiz-view'),
     result: document.getElementById('result-view')
+};
+
+// -- UI Language & Translation --
+function applyUILanguage(lang) {
+    currentUILanguage = lang;
+    localStorage.setItem('uiLanguage', lang);
+
+    // Set HTML dir and lang attributes
+    document.documentElement.setAttribute('dir', isRTL(lang) ? 'rtl' : 'ltr');
+    document.documentElement.setAttribute('lang', lang);
+
+    // Update app title
+    document.querySelector('header h1').textContent = t('app_title', lang);
+
+    // Update all static text elements that should always be translated
+    updateStaticUIText();
+}
+
+function updateStaticUIText() {
+    // Home view
+    const homeTitle = document.querySelector('#home-view h2');
+    if (homeTitle) homeTitle.textContent = t('available_quizzes', currentUILanguage);
+
+    // Lobby view
+    const backBtn = document.querySelector('.back-btn');
+    if (backBtn) backBtn.textContent = '← ' + t('back_to_quizzes', currentUILanguage);
+
+    const leaderboardBtn = document.getElementById('view-leaderboard-btn');
+    if (leaderboardBtn) leaderboardBtn.textContent = '🏆 ' + t('leaderboard', currentUILanguage);
+
+    const shareBtn = document.getElementById('share-btn');
+    if (shareBtn) shareBtn.textContent = t('share_whatsapp', currentUILanguage) + ' 📱';
+
+    const peopleWaitingText = document.querySelector('.participant-count-box');
+    if (peopleWaitingText) {
+        const count = document.getElementById('participant-count').textContent;
+        peopleWaitingText.innerHTML = `<span class="dot"></span> <span id="participant-count">${count}</span> ${t('people_waiting', currentUILanguage)}`;
+    }
+
+    const joinFormInput = document.getElementById('username');
+    if (joinFormInput) joinFormInput.placeholder = t('enter_name', currentUILanguage);
+
+    const joinFormBtn = document.querySelector('#join-form button[type="submit"]');
+    if (joinFormBtn) joinFormBtn.textContent = t('start_quiz', currentUILanguage);
+
+    // Quiz view
+    const quizTimerLabel = document.querySelector('.quiz-header');
+    if (quizTimerLabel) {
+        quizTimerLabel.innerHTML = `<div class="timer">${t('time', currentUILanguage)}: <span id="quiz-timer">00:00</span></div>`;
+    }
+
+    const questionNum = document.querySelector('.quiz-header .progress');
+    if (questionNum) {
+        const current = document.getElementById('current-q-num').textContent;
+        const total = document.getElementById('total-q-num').textContent;
+        questionNum.innerHTML = `${t('question', currentUILanguage)} <span id="current-q-num">${current}</span>/${t('of', currentUILanguage)} <span id="total-q-num">${total}</span>`;
+    }
+
+    const hintBtn = document.getElementById('hint-btn');
+    if (hintBtn) hintBtn.textContent = '💡 ' + t('need_hint', currentUILanguage);
+
+    // Result view
+    const homeBtn = document.querySelector('#result-view .cta-btn.secondary');
+    if (homeBtn && homeBtn.textContent === 'Home') {
+        homeBtn.textContent = t('home', currentUILanguage);
+    }
+
+    const leaderboardTitle = document.querySelector('#result-view h3');
+    if (leaderboardTitle) leaderboardTitle.textContent = t('leaderboard', currentUILanguage);
+}
+
+// Global function to change UI language
+window.changeUILanguage = function(lang) {
+    applyUILanguage(lang);
 };
 
 function switchView(viewName) {
@@ -28,6 +103,12 @@ function switchView(viewName) {
 
 // -- Init & Deep Linking --
 window.addEventListener('DOMContentLoaded', async () => {
+    // Apply saved UI language on load
+    applyUILanguage(currentUILanguage);
+    // Set the UI language selector to the saved value
+    const uiLangSelect = document.getElementById('ui-language-select');
+    if (uiLangSelect) uiLangSelect.value = currentUILanguage;
+
     const urlParams = new URLSearchParams(window.location.search);
     const quizId = urlParams.get('quizId');
 
@@ -60,7 +141,7 @@ async function loadQuizzes() {
         list.innerHTML = '';
 
         if (quizzes.length === 0) {
-            list.innerHTML = '<p style="text-align:center;color:var(--text-secondary)">No quizzes available.</p>';
+            list.innerHTML = `<p style="text-align:center;color:var(--text-secondary)">${t('no_quizzes', currentUILanguage)}</p>`;
         }
 
         quizzes.forEach(q => {
@@ -79,14 +160,14 @@ async function loadQuizzes() {
             let statusBadge = '';
             let timeInfo = '';
             if (end && now > end) {
-                statusBadge = '<span class="status-badge archived">Archived</span>';
-                timeInfo = `Ended: ${end.toLocaleString()}`;
+                statusBadge = `<span class="status-badge archived">${t('status_archived', currentUILanguage)}</span>`;
+                timeInfo = `${t('ended', currentUILanguage)}: ${end.toLocaleString()}`;
             } else if (now < start) {
-                statusBadge = '<span class="status-badge upcoming">Upcoming</span>';
-                timeInfo = `Starts: ${start.toLocaleString()}`;
+                statusBadge = `<span class="status-badge upcoming">${t('status_upcoming', currentUILanguage)}</span>`;
+                timeInfo = `${t('starts', currentUILanguage)}: ${start.toLocaleString()}`;
             } else {
-                statusBadge = '<span class="status-badge live">Live</span>';
-                timeInfo = `Started: ${start.toLocaleString()}`;
+                statusBadge = `<span class="status-badge live">${t('status_live', currentUILanguage)}</span>`;
+                timeInfo = `${t('started', currentUILanguage)}: ${start.toLocaleString()}`;
             }
 
             card.innerHTML = `
@@ -102,7 +183,7 @@ async function loadQuizzes() {
         });
     } catch (e) {
         console.error("Failed to load quizzes", e);
-        document.getElementById('quiz-list').innerHTML = '<p>Error loading quizzes.</p>';
+        document.getElementById('quiz-list').innerHTML = `<p>${t('error_loading_quizzes', currentUILanguage)}</p>`;
     }
 }
 
@@ -168,6 +249,8 @@ function showLobby(quiz) {
     }
 
     switchView('lobby');
+    updateStaticUIText();  // Update UI text when showing lobby
+
     document.getElementById('lobby-quiz-title').textContent = quiz.title;
     document.getElementById('lobby-quiz-desc').textContent = quiz.description;
 
@@ -188,9 +271,9 @@ function showLobby(quiz) {
 
     document.getElementById('participant-count').textContent = '0';
 
-    // Language Selector
+    // Language Selector (for quiz content - questions, options)
     const sel = document.getElementById('language-select');
-    sel.innerHTML = '<option value="en">English (Default)</option>';
+    sel.innerHTML = `<option value="en">${t('english_default', currentUILanguage)}</option>`;
     if (quiz.languages && quiz.languages.length > 1) {
         sel.classList.remove('hidden');
         quiz.languages.forEach(l => {
@@ -234,8 +317,8 @@ function checkSchedule() {
     const update = () => {
         const now = new Date();
         // Interpret server time as UTC
-        const t = currentQuiz.start_time;
-        const start = new Date(t.endsWith('Z') ? t : t + 'Z');
+        const startTime = currentQuiz.start_time;
+        const start = new Date(startTime.endsWith('Z') ? startTime : startTime + 'Z');
         const diff = start - now;
 
         const timerEl = document.getElementById('time-remaining');
@@ -245,12 +328,12 @@ function checkSchedule() {
         if (diff > 0) {
             const minutes = Math.floor(diff / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
-            timerEl.textContent = `Starts in ${minutes}m ${seconds}s`;
-            statusEl.textContent = 'Waiting for start time...';
+            timerEl.textContent = `${t('starts_in', currentUILanguage)} ${minutes}m ${seconds}s`;
+            statusEl.textContent = t('waiting_start', currentUILanguage);
             form.classList.add('hidden');
         } else {
-            timerEl.textContent = "Event Started!";
-            statusEl.textContent = 'Live now';
+            timerEl.textContent = t('event_started', currentUILanguage);
+            statusEl.textContent = t('live_now', currentUILanguage);
             form.classList.remove('hidden');
             clearInterval(scheduleInterval);
         }
@@ -280,7 +363,7 @@ document.getElementById('join-form').addEventListener('submit', async (e) => {
         }
     } catch (err) {
         console.error(err);
-        alert('Error joining quiz');
+        alert(t('error_joining', currentUILanguage));
     }
 });
 
@@ -300,11 +383,11 @@ async function startQuiz() {
         quizTimeSeconds = 0;
 
         if (currentQuestions.length == 0) {
-            throw new Error("No questions configured for this quiz");
+            throw new Error(t('no_questions_configured', currentUILanguage));
         }
 
         switchView('quiz');
-        renderQuestion();
+        requestAnimationFrame(() => renderQuestion());
 
         if (quizTimerInterval) clearInterval(quizTimerInterval);
         quizTimerInterval = setInterval(() => {
@@ -315,14 +398,17 @@ async function startQuiz() {
         }, 1000);
 
     } catch (err) {
-        alert("Could not load questions: " + err.message);
+        alert(t('could_not_load_questions', currentUILanguage) + ": " + err.message);
     }
 }
 
 function renderQuestion() {
     const q = currentQuestions[currentQuestionIndex];
-    document.getElementById('current-q-num').textContent = currentQuestionIndex + 1;
-    document.getElementById('total-q-num').textContent = currentQuestions.length;
+
+    const currentQNumEl = document.getElementById('current-q-num');
+    const totalQNumEl = document.getElementById('total-q-num');
+    if (currentQNumEl) currentQNumEl.textContent = currentQuestionIndex + 1;
+    if (totalQNumEl) totalQNumEl.textContent = currentQuestions.length;
 
     let qText = q.text;
     let qHint = q.hint;
@@ -330,38 +416,45 @@ function renderQuestion() {
 
     // Apply translation
     if (currentLanguage !== 'en' && q.translations && q.translations[currentLanguage]) {
-        const t = q.translations[currentLanguage];
-        if (t.text) qText = t.text;
-        if (t.hint) qHint = t.hint;
-        if (t.options) qOptions = t.options;
+        const translation = q.translations[currentLanguage];
+        if (translation.text) qText = translation.text;
+        if (translation.hint) qHint = translation.hint;
+        if (translation.options) qOptions = translation.options;
     }
 
-    document.getElementById('question-text').textContent = qText;
+    const questionTextEl = document.getElementById('question-text');
+    if (questionTextEl) {
+        questionTextEl.textContent = qText;
+    }
 
     // Image
     const imgEl = document.getElementById('question-image');
-    if (q.image_url) {
-        imgEl.src = q.image_url;
-        imgEl.classList.remove('hidden');
-    } else {
-        imgEl.classList.add('hidden');
+    if (imgEl) {
+        if (q.image_url) {
+            imgEl.src = q.image_url;
+            imgEl.classList.remove('hidden');
+        } else {
+            imgEl.classList.add('hidden');
+        }
     }
 
     // Hint
     const hintBtn = document.getElementById('hint-btn');
     const hintText = document.getElementById('hint-text');
-    hintText.classList.add('hidden');
+    if (hintText) hintText.classList.add('hidden');
 
-    if (qHint) {
+    if (qHint && hintBtn && hintText) {
         hintBtn.classList.remove('hidden');
         hintText.textContent = qHint;
         hintBtn.onclick = () => hintText.classList.toggle('hidden');
     } else {
-        hintBtn.classList.add('hidden');
+        if (hintBtn) hintBtn.classList.add('hidden');
     }
 
     // Options
     const container = document.getElementById('options-container');
+    if (!container) return;
+
     container.innerHTML = '';
 
     qOptions.forEach((opt, idx) => {
@@ -404,7 +497,7 @@ async function finishQuiz() {
         const result = await res.json();
         showResult(result.score, result.total);
     } catch (err) {
-        alert("Error submitting results");
+        alert(t('error_submitting', currentUILanguage));
     }
 }
 
@@ -420,7 +513,23 @@ async function showResult(score, total) {
     // Update the title
     const resultTitle = document.querySelector('#result-view h2');
     if (resultTitle) {
-        resultTitle.textContent = 'Quiz Completed!';
+        resultTitle.textContent = t('quiz_completed', currentUILanguage);
+    }
+
+    const scoreLabel = document.querySelector('.score-label');
+    if (scoreLabel) {
+        scoreLabel.textContent = t('your_score', currentUILanguage);
+    }
+
+    const homeBtn = document.querySelector('#result-view .cta-btn.secondary');
+    if (homeBtn) {
+        homeBtn.textContent = t('home', currentUILanguage);
+        homeBtn.onclick = () => showHome();
+    }
+
+    const leaderboardTitle = document.querySelector('#result-view h3');
+    if (leaderboardTitle) {
+        leaderboardTitle.textContent = t('leaderboard', currentUILanguage);
     }
 
     document.getElementById('final-score').textContent = `${score}/${total}`;
@@ -431,14 +540,18 @@ async function showResult(score, total) {
     const list = document.getElementById('leaderboard-list');
     list.innerHTML = '';
 
-    leaders.forEach((l, i) => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-            <span>#${i + 1} ${l.participant_name}</span>
-            <span>${l.score} pts (${l.time_taken_seconds}s)</span>
-        `;
-        list.appendChild(li);
-    });
+    if (leaders.length === 0) {
+        list.innerHTML = `<li>${t('no_participants', currentUILanguage)}</li>`;
+    } else {
+        leaders.forEach((l, i) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>#${i + 1} ${l.participant_name}</span>
+                <span>${l.score} pts (${l.time_taken_seconds}s)</span>
+            `;
+            list.appendChild(li);
+        });
+    }
 }
 
 // -- Language & Share --
@@ -450,7 +563,7 @@ function changeLanguage(lang) {
 }
 
 function getLangName(code) {
-    const names = { en: 'English', es: 'Spanish', fr: 'French', de: 'German' };
+    const names = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', ur: 'اردو', fa: 'فارسی', hi: 'हिन्दी' };
     return names[code] || code.toUpperCase();
 }
 
@@ -472,83 +585,67 @@ async function showArchivedQuiz(quiz) {
         currentQuestionIndex = 0;
 
         switchView('quiz');
-        renderArchivedQuestion();
+        requestAnimationFrame(() => renderArchivedQuestion());
     } catch (err) {
-        alert("Could not load archived quiz: " + err.message);
+        alert(t('could_not_load_archived', currentUILanguage) + ": " + err.message);
         showHome();
     }
 }
 
 function renderArchivedQuestion() {
     const q = currentQuestions[currentQuestionIndex];
-    document.getElementById('current-q-num').textContent = currentQuestionIndex + 1;
-    document.getElementById('total-q-num').textContent = currentQuestions.length;
 
-    let qText = q.text;
-    let qHint = q.hint;
-    let qOptions = q.options;
+    const currentQNumEl = document.getElementById('current-q-num');
+    const totalQNumEl = document.getElementById('total-q-num');
+    if (currentQNumEl) currentQNumEl.textContent = currentQuestionIndex + 1;
+    if (totalQNumEl) totalQNumEl.textContent = currentQuestions.length;
 
-    // Apply translation
-    if (currentLanguage !== 'en' && q.translations && q.translations[currentLanguage]) {
-        const t = q.translations[currentLanguage];
-        if (t.text) qText = t.text;
-        if (t.hint) qHint = t.hint;
-        if (t.options) qOptions = t.options;
+    // Update timer
+    const quizTimerEl = document.getElementById('quiz-timer');
+    if (quizTimerEl) {
+        quizTimerEl.textContent = t('status_archived', currentUILanguage);
     }
 
-    document.getElementById('question-text').textContent = qText + ' (Archived - Review Only)';
-    document.getElementById('quiz-timer').textContent = 'Archived';
-
-    // Image
+    // Handle image
     const imgEl = document.getElementById('question-image');
-    if (q.image_url) {
-        imgEl.src = q.image_url;
-        imgEl.classList.remove('hidden');
-    } else {
-        imgEl.classList.add('hidden');
-    }
-
-    // Hint
-    const hintBtn = document.getElementById('hint-btn');
-    const hintText = document.getElementById('hint-text');
-    hintText.classList.remove('hidden');
-
-    if (qHint) {
-        hintBtn.classList.add('hidden');
-        hintText.textContent = 'Hint: ' + qHint;
-    } else {
-        hintBtn.classList.add('hidden');
-        hintText.classList.add('hidden');
-    }
-
-    // Options - show correct answer
-    const container = document.getElementById('options-container');
-    container.innerHTML = '';
-
-    qOptions.forEach((opt, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'option-btn';
-        if (idx === q.correct_index) {
-            btn.classList.add('correct-answer');
-            btn.textContent = '✓ ' + opt + ' (Correct Answer)';
+    if (imgEl) {
+        if (q.image_url) {
+            imgEl.src = q.image_url;
+            imgEl.classList.remove('hidden');
         } else {
-            btn.textContent = opt;
-            btn.style.opacity = '0.6';
+            imgEl.classList.add('hidden');
         }
-        // btn.disabled = true; // Removed so onclick works for navigation
-        btn.style.cursor = 'pointer';
+    }
 
-        // Navigate to next question on click
-        if (currentQuestionIndex < currentQuestions.length - 1) {
-            btn.onclick = () => {
+    // Hide hint button for archived mode
+    const hintBtn = document.getElementById('hint-btn');
+    if (hintBtn) hintBtn.classList.add('hidden');
+
+    const hintText = document.getElementById('hint-text');
+    if (hintText) hintText.classList.remove('hidden');
+
+    // Use common rendering function
+    const container = document.getElementById('options-container');
+    if (!container) return;
+
+    // Render the question with common function
+    renderQuestion(q, currentLanguage, true, true, {
+        questionText: document.getElementById('question-text'),
+        hintText: hintText,
+        optionsContainer: container
+    });
+
+    // Add navigation handlers to option buttons
+    const buttons = container.querySelectorAll('.option-btn');
+    buttons.forEach((btn, idx) => {
+        btn.onclick = () => {
+            if (currentQuestionIndex < currentQuestions.length - 1) {
                 currentQuestionIndex++;
                 renderArchivedQuestion();
-            };
-        } else {
-            btn.onclick = () => showArchivedLeaderboard();
-        }
-
-        container.appendChild(btn);
+            } else {
+                showArchivedLeaderboard();
+            }
+        };
     });
 }
 
@@ -569,14 +666,25 @@ async function showArchivedLeaderboard(leaders = null) {
     // Update the title
     const resultTitle = document.querySelector('#result-view h2');
     if (resultTitle) {
-        resultTitle.textContent = 'Archived Quiz - Leaderboard';
+        resultTitle.textContent = t('archived_leaderboard', currentUILanguage);
+    }
+
+    const homeBtn = document.querySelector('#result-view .cta-btn.secondary');
+    if (homeBtn) {
+        homeBtn.textContent = t('home', currentUILanguage);
+        homeBtn.onclick = () => showHome();
+    }
+
+    const leaderboardTitle = document.querySelector('#result-view h3');
+    if (leaderboardTitle) {
+        leaderboardTitle.textContent = t('leaderboard', currentUILanguage);
     }
 
     const list = document.getElementById('leaderboard-list');
     list.innerHTML = '';
 
     if (leaders.length === 0) {
-        list.innerHTML = '<li>No participants yet</li>';
+        list.innerHTML = `<li>${t('no_participants', currentUILanguage)}</li>`;
     } else {
         leaders.forEach((l, i) => {
             const li = document.createElement('li');
@@ -604,10 +712,10 @@ window.viewLobbyLeaderboard = async function () {
 
         // Update title
         const resultTitle = document.querySelector('#result-view h2');
-        if (resultTitle) resultTitle.textContent = `${currentQuiz.title} - Leaderboard`;
+        if (resultTitle) resultTitle.textContent = `${currentQuiz.title} - ${t('leaderboard', currentUILanguage)}`;
 
-        // Update Back button behavior regarding where we came from? 
-        // actually showHome() is on the result view button. 
+        // Update Back button behavior regarding where we came from?
+        // actually showHome() is on the result view button.
         // We might want a "Back to Lobby" button if we came from lobby.
         // For now, the "Home" button is there. Let's change it to "Back" if we can, or just leave it.
         // The result view has: <button class="cta-btn secondary" onclick="showHome()">Home</button>
@@ -615,15 +723,20 @@ window.viewLobbyLeaderboard = async function () {
 
         const homeBtn = document.querySelector('#result-view .cta-btn.secondary');
         if (homeBtn) {
-            homeBtn.textContent = 'Back to Lobby';
+            homeBtn.textContent = t('back_to_lobby', currentUILanguage);
             homeBtn.onclick = () => showLobby(currentQuiz);
+        }
+
+        const leaderboardTitle = document.querySelector('#result-view h3');
+        if (leaderboardTitle) {
+            leaderboardTitle.textContent = t('leaderboard', currentUILanguage);
         }
 
         const list = document.getElementById('leaderboard-list');
         list.innerHTML = '';
 
         if (leaders.length === 0) {
-            list.innerHTML = '<li>No participants yet</li>';
+            list.innerHTML = `<li>${t('no_participants', currentUILanguage)}</li>`;
         } else {
             leaders.forEach((l, i) => {
                 const li = document.createElement('li');
@@ -637,17 +750,22 @@ window.viewLobbyLeaderboard = async function () {
 
     } catch (e) {
         console.error(e);
-        alert('Failed to load leaderboard');
+        alert(t('failed_leaderboard', currentUILanguage));
     }
 };
 
 // -- History Navigation --
 window.addEventListener('popstate', () => {
     const urlParams = new URLSearchParams(window.location.search);
-    const quizId = urlParams.get('quizId');
     if (quizId) {
         location.reload();
     } else {
-        showHome();
+        window.showHome();
     }
 });
+
+// Make functions available globally for HTML onclick handlers
+window.showHome = showHome;
+window.changeLanguage = changeLanguage;
+window.shareQuiz = shareQuiz;
+window.viewLobbyLeaderboard = viewLobbyLeaderboard;

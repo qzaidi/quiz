@@ -8,6 +8,8 @@
     --success: #10b981;
     --error: #ef4444;
     --font-main: 'Inter', sans-serif;
+    --font-arabic: 'Noto Nastaliq Urdu', 'Vazirmatn', sans-serif;
+    --font-devanagari: 'Noto Sans Devanagari', sans-serif;
 
     /* Dynamic Theme Variables */
     --theme-primary: var(--accent);
@@ -62,9 +64,20 @@ header {
     align-items: center;
 }
 
-.icon-btn {
+.header-controls {
     position: absolute;
     right: 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+[dir="rtl"] .header-controls {
+    right: auto;
+    left: 0;
+}
+
+.icon-btn {
     background: none;
     border: none;
     font-size: 1.2em;
@@ -571,4 +584,128 @@ input[type="color"] {
 .lobby-header p {
     margin: 0;
     color: var(--text-secondary);
+}
+
+/* =============================================================================
+   RTL (Right-to-Left) Support
+   ============================================================================= */
+
+/* Language-specific font settings */
+[lang="ur"], [lang="ur"] * {
+    font-family: var(--font-arabic), var(--font-main);
+}
+
+[lang="fa"], [lang="fa"] * {
+    font-family: var(--font-arabic), var(--font-main);
+}
+
+[lang="hi"], [lang="hi"] * {
+    font-family: var(--font-devanagari), var(--font-main);
+}
+
+/* RTL Layout overrides */
+[dir="rtl"] {
+    text-align: right;
+}
+
+[dir="rtl"] .icon-btn {
+    right: auto;
+    left: 0;
+}
+
+[dir="rtl"] .lobby-header {
+    text-align: right;
+}
+
+[dir="rtl"] .quiz-content {
+    text-align: right;
+}
+
+[dir="rtl"] .option-btn {
+    text-align: right;
+}
+
+[dir="rtl"] .hint-content {
+    border-left: none;
+    border-right: 3px solid #fbbf24;
+    border-radius: 4px 0 0 4px;
+}
+
+[dir="rtl"] .leaderboard {
+    text-align: right;
+}
+
+[dir="rtl"] .admin-list {
+    text-align: right;
+}
+
+[dir="rtl"] .checkbox-group {
+    text-align: right;
+}
+
+[dir="rtl"] .quiz-card {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .lobby-header {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .admin-actions {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .controls-row {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .lang-tabs {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .participant-count-box {
+    flex-direction: row-reverse;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-modal:hover {
+    color: var(--text-primary);
 }

@@ -17,7 +17,7 @@
     <!-- Favicon -->
     <link rel="icon" href="logo.png" type="image/png">
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Nastaliq+Urdu:wght@400;700&family=Vazirmatn:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -26,7 +26,15 @@
     <div class="app-container">
         <header>
             <h1>Trivia Master</h1>
-            <button id="admin-login-btn" onclick="window.location.href='admin.html'" class="icon-btn">⚙️</button>
+            <div class="header-controls">
+                <select id="ui-language-select" class="lang-select" onchange="changeUILanguage(this.value)">
+                    <option value="en">English</option>
+                    <option value="ur">اردو</option>
+                    <option value="fa">فارسی</option>
+                    <option value="hi">हिन्दी</option>
+                </select>
+                <button id="admin-login-btn" onclick="window.location.href='admin.html'" class="icon-btn">⚙️</button>
+            </div>
         </header>
 
         <main id="main-content">
@@ -113,6 +121,8 @@
         </main>
     </div>
 
+    <script src="locales.js"></script>
+    <script src="common.js"></script>
     <script src="app.js"></script>
 </body>
 
