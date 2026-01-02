@@ -4,7 +4,7 @@
   "main": "src/app.js",
   "type": "module",
   "scripts": {
-    "start": "node src/app.js",
+    "start": "NODE_ENV=production node src/app.js",
     "dev": "node --watch src/app.js"
   },
   "keywords": [],
@@ -13,8 +13,14 @@
   "description": "",
   "dependencies": {
     "better-sqlite3": "^12.5.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "csso": "^5.0.1",
+    "html-minifier-terser": "^7.2.0",
+    "terser": "^5.36.0"
   }
 }

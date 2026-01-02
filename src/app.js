@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import compression from 'compression';
 import { initDb } from './database.js';
 import { setupWebSocket } from './websocket.js';
 import publicRoutes from './routes/public.js';
@@ -14,10 +15,18 @@ initDb();
 
 const app = express();
 const port = 3000;
+const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+
+// Enable compression for all responses
+app.use(compression());
+
+app.use(express.static(path.join(__dirname, '../public'), {
+    maxAge: isProduction ? '1y' : 0, // Cache for 1 year in production
+    immutable: isProduction
+}));
 
 // Routes
 app.use('/api', publicRoutes);
@@ -26,6 +35,7 @@ app.use('/api/admin', adminRoutes);
 // Start Server
 const server = app.listen(port, () => {
     console.log(`Quiz app listening on port ${port}`);
+    console.log(`Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
 });
 
 // Setup WebSocket

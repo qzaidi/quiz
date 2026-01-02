@@ -387,7 +387,7 @@ async function startQuiz() {
         }
 
         switchView('quiz');
-        requestAnimationFrame(() => renderQuestion());
+        requestAnimationFrame(() => renderLiveQuizQuestion());
 
         if (quizTimerInterval) clearInterval(quizTimerInterval);
         quizTimerInterval = setInterval(() => {
@@ -402,32 +402,17 @@ async function startQuiz() {
     }
 }
 
-function renderQuestion() {
+// Render a live quiz question (hides correct answer)
+function renderLiveQuizQuestion() {
     const q = currentQuestions[currentQuestionIndex];
 
+    // Update question numbers
     const currentQNumEl = document.getElementById('current-q-num');
     const totalQNumEl = document.getElementById('total-q-num');
     if (currentQNumEl) currentQNumEl.textContent = currentQuestionIndex + 1;
     if (totalQNumEl) totalQNumEl.textContent = currentQuestions.length;
 
-    let qText = q.text;
-    let qHint = q.hint;
-    let qOptions = q.options;
-
-    // Apply translation
-    if (currentLanguage !== 'en' && q.translations && q.translations[currentLanguage]) {
-        const translation = q.translations[currentLanguage];
-        if (translation.text) qText = translation.text;
-        if (translation.hint) qHint = translation.hint;
-        if (translation.options) qOptions = translation.options;
-    }
-
-    const questionTextEl = document.getElementById('question-text');
-    if (questionTextEl) {
-        questionTextEl.textContent = qText;
-    }
-
-    // Image
+    // Handle image
     const imgEl = document.getElementById('question-image');
     if (imgEl) {
         if (q.image_url) {
@@ -438,31 +423,36 @@ function renderQuestion() {
         }
     }
 
-    // Hint
+    // Setup hint button for live quiz
     const hintBtn = document.getElementById('hint-btn');
     const hintText = document.getElementById('hint-text');
-    if (hintText) hintText.classList.add('hidden');
 
-    if (qHint && hintBtn && hintText) {
-        hintBtn.classList.remove('hidden');
-        hintText.textContent = qHint;
-        hintBtn.onclick = () => hintText.classList.toggle('hidden');
-    } else {
-        if (hintBtn) hintBtn.classList.add('hidden');
-    }
-
-    // Options
+    // Use common rendering function (showCorrectAnswer=false for live quiz)
     const container = document.getElementById('options-container');
     if (!container) return;
 
-    container.innerHTML = '';
+    // Call the common.js function
+    window.renderQuestion(q, currentLanguage, false, false, {
+        questionText: document.getElementById('question-text'),
+        hintText: hintText,
+        optionsContainer: container
+    });
 
-    qOptions.forEach((opt, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'option-btn';
-        btn.textContent = opt;
+    // Re-hide hint text for live quiz (common.js shows it by default)
+    if (hintText) hintText.classList.add('hidden');
+
+    // Show hint button if hint exists
+    if (q.hint && hintBtn) {
+        hintBtn.classList.remove('hidden');
+        hintBtn.onclick = () => hintText.classList.toggle('hidden');
+    } else if (hintBtn) {
+        hintBtn.classList.add('hidden');
+    }
+
+    // Add click handlers to option buttons
+    const buttons = container.querySelectorAll('.option-btn');
+    buttons.forEach((btn, idx) => {
         btn.onclick = () => selectOption(idx);
-        container.appendChild(btn);
     });
 }
 
@@ -472,7 +462,7 @@ function selectOption(idx) {
 
     if (currentQuestionIndex < currentQuestions.length - 1) {
         currentQuestionIndex++;
-        renderQuestion();
+        renderLiveQuizQuestion();
     } else {
         finishQuiz();
     }
