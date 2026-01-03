@@ -30,7 +30,11 @@ export class ApiHelper {
     });
 
     if (!response.ok()) {
-      throw new Error(`Failed to create quiz: ${response.status()}`);
+      const errorText = await response.text();
+      console.error('Failed to create quiz. Status:', response.status());
+      console.error('Response:', errorText);
+      console.error('Request data:', defaultQuiz);
+      throw new Error(`Failed to create quiz: ${response.status()} - ${errorText}`);
     }
 
     return await response.json();

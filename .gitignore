@@ -6,6 +6,7 @@ quiz.db
 quiz.test.db
 *.db-shm
 *.db-wal
+*.db.lock
 
 # Test results
 coverage/
