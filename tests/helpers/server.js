@@ -18,8 +18,8 @@ export async function startTestServer(port = 3001) {
     throw new Error('Server is already running');
   }
 
-  // Set test environment - use a file-based database so tests can share it
-  process.env.NODE_ENV = 'test';
+  // Disable automatic server start so we can control it
+  process.env.DISABLE_SERVER_START = 'true';
   process.env.ADMIN_PASSWORD = 'test-admin-password';
   process.env.TEST_DB_PATH = 'quiz.test.db';
 

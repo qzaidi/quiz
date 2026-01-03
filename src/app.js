@@ -32,8 +32,9 @@ app.use(express.static(path.join(__dirname, '../public'), {
 app.use('/api', publicRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Only start server if not in test mode
-if (process.env.NODE_ENV !== 'test') {
+// Start server unless explicitly disabled (for Vitest integration tests)
+// Playwright E2E tests will start the server via webServer config
+if (process.env.DISABLE_SERVER_START !== 'true') {
   // Start Server
   const server = app.listen(port, () => {
       console.log(`Quiz app listening on port ${port}`);

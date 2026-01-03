@@ -5,7 +5,20 @@
 
 A modern, real-time trivia quiz application built with Node.js, Express, and Vanilla JavaScript. Features a dark-mode responsive UI, live participant tracking, and a comprehensive admin dashboard.
 
-![Screenshot](public/favicon.ico) *Note: Add a real screenshot here*
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="screenshots/home.png" alt="Homepage" width="400"/></td>
+    <td><img src="screenshots/quiz-list.png" alt="Quiz List" width="400"/></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/question.png" alt="Question View" width="400"/></td>
+    <td><img src="screenshots/mobile.png" alt="Mobile View" width="400"/></td>
+  </tr>
+</table>
+
+**Generate Screenshots**: Run `npm run test:screenshots` to capture fresh screenshots from the latest build.
 
 ## Features
 
@@ -104,13 +117,40 @@ npm run test:watch
 npm run test:e2e
 ```
 
+### Screenshots
+To capture fresh screenshots for the README:
+```bash
+# Run screenshot tests (generates screenshots in /screenshots)
+npm run test:screenshots
+
+# Optional: Run organizer script
+bash scripts/update-screenshots.sh
+
+# Commit the new screenshots
+git add screenshots/*.png
+git commit -m "docs: update screenshots"
+```
+
+**Screenshots captured:**
+- `homepage.png` - Main landing page
+- `quiz-list.png` - Available quizzes
+- `question.png` - Quiz question view
+- `mobile.png` - Mobile responsive view
+
 ### Test Structure
-- `tests/integration/` - API and integration tests
+- `tests/integration/` - API and integration tests (44 tests)
   - `api/public.test.js` - Public API endpoints (15 tests)
   - `api/admin.test.js` - Admin API endpoints (18 tests)
   - `api/websocket.test.js` - WebSocket functionality (11 tests)
-- `tests/e2e/` - End-to-end browser tests
+- `tests/e2e/` - End-to-end browser tests (17 tests)
+  - `smoke.spec.js` - Basic smoke tests (6 tests)
+  - `user-flows/full-quiz-flow.spec.js` - Complete quiz participation flow (7 tests)
+  - `user-flows/quiz-participation.spec.js` - Quiz UI interaction tests (4 tests)
 - `tests/helpers/` - Test utilities and fixtures
+  - `server.js` - Test server setup/teardown
+  - `database.js` - Test database helpers
+  - `fixtures.js` - Test data factories
+  - `test-data.js` - E2E API helper class
 
 ## Project Structure
 - `src/`

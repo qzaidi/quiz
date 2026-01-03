@@ -11,6 +11,7 @@
     "test:coverage": "vitest --coverage",
     "test:integration": "vitest tests/integration",
     "test:e2e": "playwright test",
+    "test:screenshots": "playwright test screenshots.spec.js",
     "test:all": "npm run test:integration && npm run test:e2e"
   },
   "keywords": [],
