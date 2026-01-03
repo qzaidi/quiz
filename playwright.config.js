@@ -18,7 +18,7 @@ export default defineConfig({
   },
   globalTeardown: './tests/e2e/global-teardown.js',
   webServer: {
-    command: 'ADMIN_PASSWORD=test-admin-password PORT=3001 node tests/e2e/test-server.js',
+    command: 'ADMIN_PASSWORD=test-admin-password TEST_DB_PATH=quiz.test.db NODE_ENV=test PORT=3001 node tests/e2e/test-server.js',
     port: 3001,
     timeout: 120000
   }

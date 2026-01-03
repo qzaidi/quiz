@@ -9,12 +9,12 @@ A modern, real-time trivia quiz application built with Node.js, Express, and Van
 
 <table>
   <tr>
-    <td><img src="screenshots/home.png" alt="Homepage" width="400"/></td>
+    <td><img src="screenshots/homepage.png" alt="Homepage" width="400"/></td>
     <td><img src="screenshots/quiz-list.png" alt="Quiz List" width="400"/></td>
   </tr>
   <tr>
-    <td><img src="screenshots/question.png" alt="Question View" width="400"/></td>
-    <td><img src="screenshots/mobile.png" alt="Mobile View" width="400"/></td>
+    <td><img src="screenshots/mobile-question.png" alt="Question View" width="400"/></td>
+    <td><img src="screenshots/mobile-homepage.png" alt="Mobile Home" width="400"/></td>
   </tr>
 </table>
 

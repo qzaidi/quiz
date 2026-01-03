@@ -4,30 +4,15 @@
 import fs from 'fs';
 import { initDb, default as db } from '../../src/database.js';
 
-// Set environment for test database
-process.env.NODE_ENV = 'test';
-process.env.TEST_DB_PATH = 'quiz.test.db';
+// environments should be set from playwrite
+// NODE_ENV=test
+// TEST_DB_PATH='quiz.test.db'
 
-const dbPath = 'quiz.test.db';
+
+const dbPath = process.env.TEST_DB_PATH || 'quiz.test.db';
 
 async function seedTestDatabase() {
   try {
-    // Check if database exists and has data
-    const dbExists = fs.existsSync(dbPath);
-
-    if (!dbExists) {
-      console.log('🗑️  Creating fresh test database');
-    } else {
-      // Check if it has the seeded quiz
-      const quizCount = db.prepare('SELECT COUNT(*) as count FROM quizzes WHERE title = ?').get('Trivia Quiz');
-      if (quizCount.count > 0) {
-        console.log('✅ Test database already seeded with sample quiz');
-        return;
-      } else {
-        console.log('🗑️  Database exists but empty, cleaning...');
-        fs.unlinkSync(dbPath);
-      }
-    }
 
     // Initialize schema using existing initDb function
     initDb();

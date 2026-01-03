@@ -8,7 +8,7 @@ const dbOptions = process.env.DEBUG ? { verbose: console.log } : {};
 const db = new Database(dbPath, dbOptions);
 
 if (process.env.DEBUG) {
-  console.log('🔍 Database verbose logging enabled');
+  console.log('🔍 Database verbose logging enabled - using database',dbPath);
 }
 
 
