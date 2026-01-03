@@ -1,5 +1,8 @@
 # Trivia Quiz Platform
 
+![Tests](https://github.com/qzaidi/quiz/workflows/Tests/badge.svg)
+![Coverage](https://img.shields.io/badge/coverage-TODO%20-brightgreen)
+
 A modern, real-time trivia quiz application built with Node.js, Express, and Vanilla JavaScript. Features a dark-mode responsive UI, live participant tracking, and a comprehensive admin dashboard.
 
 ![Screenshot](public/favicon.ico) *Note: Add a real screenshot here*
@@ -81,6 +84,33 @@ docker-compose up --build -d
 - **App**: Runs on internal port 3000.
 - **Nginx**: Exposes standard HTTP (80) and HTTPS (443).
 - **Certbot**: Automatically requests and renews SSL certificates for your domain.
+
+## Testing
+
+This project uses Vitest for API/integration tests and Playwright for end-to-end tests.
+
+### Run Tests
+```bash
+# Run all integration tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Run in watch mode (development)
+npm run test:watch
+
+# Run E2E tests (Playwright)
+npm run test:e2e
+```
+
+### Test Structure
+- `tests/integration/` - API and integration tests
+  - `api/public.test.js` - Public API endpoints (15 tests)
+  - `api/admin.test.js` - Admin API endpoints (18 tests)
+  - `api/websocket.test.js` - WebSocket functionality (11 tests)
+- `tests/e2e/` - End-to-end browser tests
+- `tests/helpers/` - Test utilities and fixtures
 
 ## Project Structure
 - `src/`

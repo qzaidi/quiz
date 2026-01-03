@@ -1,8 +1,11 @@
 import Database from 'better-sqlite3';
 
+// Use TEST_DB_PATH if in test environment, otherwise use quiz.db
+const dbPath = process.env.NODE_ENV === 'test' ? (process.env.TEST_DB_PATH || ':memory:') : 'quiz.db';
+
 // Enable verbose query logging if DEBUG is set
 const dbOptions = process.env.DEBUG ? { verbose: console.log } : {};
-const db = new Database('quiz.db', dbOptions);
+const db = new Database(dbPath, dbOptions);
 
 if (process.env.DEBUG) {
   console.log('🔍 Database verbose logging enabled');
