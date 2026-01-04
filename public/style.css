@@ -405,6 +405,15 @@ input[type="color"] {
     font-weight: bold;
 }
 
+.leaderboard li.leaderboard-highlight {
+    background: rgba(139, 92, 246, 0.15);
+    border-radius: 8px;
+    border: 2px solid var(--theme-primary);
+    font-weight: 600;
+    padding: 12px;
+    margin: 4px 0;
+}
+
 .score-display {
     margin: 20px 0;
 }

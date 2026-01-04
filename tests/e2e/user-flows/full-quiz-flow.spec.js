@@ -141,19 +141,56 @@ test.describe('Full Quiz Flow', () => {
         // Wait for question to load
         await page.waitForTimeout(500);
 
-        // Click on the first option (could be any option)
-        const options = page.locator('button, .option, [role="button"]').all();
-        if (options.length > 0) {
-          await options[0].click();
+        // Click on the first option button
+        const firstOption = page.locator('.option-btn').first();
+        const count = await firstOption.count();
+        if (count > 0) {
+          await firstOption.click();
         }
 
         // Wait for next question or results
         await page.waitForTimeout(1000);
       }
 
+      // Wait for result view to appear
+      await page.waitForSelector('#result-view:not(.hidden)', { timeout: 5000 });
+
       // Check if we see results or completion message
       const currentUrl = page.url();
       expect(currentUrl).toBeTruthy();
+
+      // Verify leaderboard is displayed
+      const leaderboardList = page.locator('#leaderboard-list');
+      await expect(leaderboardList).toBeVisible({ timeout: 5000 });
+
+      // Check if the current user's entry is highlighted in the leaderboard
+      const leaderboardEntries = page.locator('#leaderboard-list li');
+      const entryCount = await leaderboardEntries.count();
+
+      expect(entryCount).toBeGreaterThan(0);
+
+      // Find our user and verify highlighting
+      let foundUser = false;
+      let userIsHighlighted = false;
+
+      for (let i = 0; i < entryCount; i++) {
+        const entry = leaderboardEntries.nth(i);
+        const text = await entry.textContent();
+
+        if (text.includes('Test Player')) {
+          foundUser = true;
+          // Check if the entry has the highlight class
+          const hasHighlightClass = await entry.evaluate(el =>
+            el.classList.contains('leaderboard-highlight')
+          );
+          userIsHighlighted = hasHighlightClass;
+          break;
+        }
+      }
+
+      // Assert that our user is found and highlighted
+      expect(foundUser).toBeTruthy();
+      expect(userIsHighlighted).toBeTruthy();
     } else {
       test.skip(true, 'Name input not found');
     }

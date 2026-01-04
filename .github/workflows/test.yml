@@ -31,6 +31,7 @@ jobs:
           files: ./coverage/coverage-final.json
           flags: integration
           name: integration-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   e2e-tests:
     runs-on: ubuntu-latest

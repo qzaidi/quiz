@@ -485,13 +485,13 @@ async function finishQuiz() {
         });
 
         const result = await res.json();
-        showResult(result.score, result.total);
+        showResult(result.score, result.total, username);
     } catch (err) {
         alert(t('error_submitting', currentUILanguage));
     }
 }
 
-async function showResult(score, total) {
+async function showResult(score, total, username = null) {
     switchView('result');
 
     // Show the score display section for normal quiz completion
@@ -535,6 +535,10 @@ async function showResult(score, total) {
     } else {
         leaders.forEach((l, i) => {
             const li = document.createElement('li');
+            // Highlight the current user's entry
+            if (username && l.participant_name === username) {
+                li.classList.add('leaderboard-highlight');
+            }
             li.innerHTML = `
                 <span>#${i + 1} ${l.participant_name}</span>
                 <span>${l.score} pts (${l.time_taken_seconds}s)</span>
