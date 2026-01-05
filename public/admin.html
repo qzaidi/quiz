@@ -151,6 +151,12 @@
                 </div>
 
                 <div id="table-questions-container" class="table-container hidden">
+                    <div style="margin-bottom: 15px;">
+                        <label for="questions-quiz-filter" style="margin-right: 10px;">Filter by Quiz:</label>
+                        <select id="questions-quiz-filter" class="lang-select" onchange="reloadQuestionsTable()">
+                            <option value="">All Quizzes</option>
+                        </select>
+                    </div>
                     <table id="questions-table" class="display" style="width:100%">
                         <thead>
                             <tr>
@@ -166,6 +172,12 @@
                 </div>
 
                 <div id="table-sessions-container" class="table-container hidden">
+                    <div style="margin-bottom: 15px;">
+                        <label for="sessions-quiz-filter" style="margin-right: 10px;">Filter by Quiz:</label>
+                        <select id="sessions-quiz-filter" class="lang-select" onchange="reloadSessionsTable()">
+                            <option value="">All Quizzes</option>
+                        </select>
+                    </div>
                     <table id="sessions-table" class="display" style="width:100%">
                         <thead>
                             <tr>

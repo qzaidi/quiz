@@ -447,7 +447,15 @@ document.getElementById('add-question-form').addEventListener('submit', async (e
 function showAdminTables() {
     switchView('adminTables');
     initDataTables();
-    switchTableTab('quizzes');
+    // Don't reload immediately - let the natural initialization handle it
+    // Only switch the active tab visually without triggering ajax.reload()
+    const tablesView = document.getElementById('admin-tables-view');
+    tablesView.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+    tablesView.querySelectorAll('.table-container').forEach(c => c.classList.add('hidden'));
+
+    const tabs = tablesView.querySelector('.tabs').children;
+    tabs[0].classList.add('active');
+    document.getElementById('table-quizzes-container').classList.remove('hidden');
 }
 
 function switchTableTab(tab) {
@@ -473,6 +481,9 @@ function switchTableTab(tab) {
 }
 
 function initDataTables() {
+    // Always populate quiz filter dropdowns (even if tables are already initialized)
+    populateQuizFilters();
+
     if ($.fn.DataTable.isDataTable('#quizzes-table')) return;
 
     quizzesTable = $('#quizzes-table').DataTable({
@@ -508,6 +519,12 @@ function initDataTables() {
         ajax: {
             url: API_URL + '/admin/questions',
             beforeSend: (xhr) => xhr.setRequestHeader('x-admin-password', adminToken),
+            data: function(d) {
+                const quizId = document.getElementById('questions-quiz-filter').value;
+                if (quizId) {
+                    d.quiz_id = quizId;
+                }
+            },
             dataSrc: '',
             error: function (xhr, error, code) {
                 if (xhr.status === 401) {
@@ -536,6 +553,12 @@ function initDataTables() {
         ajax: {
             url: API_URL + '/admin/sessions',
             beforeSend: (xhr) => xhr.setRequestHeader('x-admin-password', adminToken),
+            data: function(d) {
+                const quizId = document.getElementById('sessions-quiz-filter').value;
+                if (quizId) {
+                    d.quiz_id = quizId;
+                }
+            },
             dataSrc: '',
             error: function (xhr, error, code) {
                 if (xhr.status === 401) {
@@ -916,5 +939,61 @@ window.confirmImport = async function() {
     if (await handleApiResponse(res, `Successfully imported ${pendingImportQuestions.length} questions!`)) {
         document.getElementById('bulk-upload-file').value = ''; // Reset input
         closePreviewModal();
+    }
+};
+
+// -- Quiz Filter Functions --
+async function populateQuizFilters() {
+    try {
+        const res = await fetch(`${API_URL}/quizzes`, { headers: getAdminHeaders() });
+        if (!res.ok) {
+            console.error('Failed to fetch quizzes for filters:', res.statusText);
+            return;
+        }
+
+        const quizzes = await res.json();
+        console.log('Loaded quizzes for filters:', quizzes.length);
+
+        // Populate questions filter
+        const questionsFilter = document.getElementById('questions-quiz-filter');
+        if (questionsFilter) {
+            questionsFilter.innerHTML = '<option value="">All Quizzes</option>';
+            quizzes.forEach(q => {
+                const option = document.createElement('option');
+                option.value = q.id;
+                option.textContent = q.title;
+                questionsFilter.appendChild(option);
+            });
+        } else {
+            console.error('questions-quiz-filter element not found');
+        }
+
+        // Populate sessions filter
+        const sessionsFilter = document.getElementById('sessions-quiz-filter');
+        if (sessionsFilter) {
+            sessionsFilter.innerHTML = '<option value="">All Quizzes</option>';
+            quizzes.forEach(q => {
+                const option = document.createElement('option');
+                option.value = q.id;
+                option.textContent = q.title;
+                sessionsFilter.appendChild(option);
+            });
+        } else {
+            console.error('sessions-quiz-filter element not found');
+        }
+    } catch (error) {
+        console.error('Failed to load quizzes for filters:', error);
+    }
+}
+
+window.reloadQuestionsTable = function() {
+    if (questionsTable) {
+        questionsTable.ajax.reload();
+    }
+};
+
+window.reloadSessionsTable = function() {
+    if (sessionsTable) {
+        sessionsTable.ajax.reload();
     }
 };
