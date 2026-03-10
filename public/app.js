@@ -263,10 +263,24 @@ function showLobby(quiz) {
         imgEl.classList.add('hidden');
     }
 
-    // Update OG Image dynamically (client-side attempt)
+    // Update OG tags for WhatsApp sharing with QR code preview
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) {
+        ogTitle.content = `${quiz.title} - Trivia Master`;
+    }
+
     const ogImage = document.querySelector('meta[property="og:image"]');
     if (ogImage) {
-        ogImage.content = quiz.image_url || '/logo.png';
+        // Use absolute URL for WhatsApp crawler - QR code as preview image
+        ogImage.content = `${protocol}//${host}/api/quiz/${quiz.id}/qr`;
+    }
+
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc && quiz.description) {
+        ogDesc.content = quiz.description;
     }
 
     document.getElementById('participant-count').textContent = '0';
@@ -292,6 +306,12 @@ function showLobby(quiz) {
     const form = document.getElementById('join-form');
     form.classList.add('hidden');
     form.reset();
+
+    // Set QR code source - API endpoint generates and caches the image
+    const qrCodeImg = document.getElementById('qr-code');
+    if (qrCodeImg) {
+        qrCodeImg.src = `${API_URL}/quiz/${quiz.id}/qr`;
+    }
 
     checkSchedule();
     connectWS(quiz.id);

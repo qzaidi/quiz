@@ -89,12 +89,21 @@ router.post('/questions/bulk', (req, res) => {
 
 // Get All Questions (for DataTables)
 router.get('/questions', (req, res) => {
-    // Join with quizzes to get quiz title for context
-    const questions = db.prepare(`
-        SELECT q.id, q.quiz_id, q.text, q.hint, q.options, q.correct_index, q.translations, z.title as quiz_title 
+    const { quiz_id } = req.query;
+
+    let sql = `
+        SELECT q.id, q.quiz_id, q.text, q.hint, q.options, q.correct_index, q.translations, z.title as quiz_title
         FROM questions q
         JOIN quizzes z ON q.quiz_id = z.id
-    `).all();
+    `;
+
+    const params = [];
+    if (quiz_id) {
+        sql += ' WHERE q.quiz_id = ?';
+        params.push(quiz_id);
+    }
+
+    const questions = db.prepare(sql).all(...params);
 
     questions.forEach(q => {
         try { q.options = JSON.parse(q.options); } catch (e) { }
@@ -166,12 +175,23 @@ router.get('/quizzes/:id/questions', (req, res) => {
 
 // Get All Sessions
 router.get('/sessions', (req, res) => {
-    const sessions = db.prepare(`
-            SELECT s.id, s.quiz_id, s.participant_name, s.score, s.time_taken_seconds, s.completed_at, z.title as quiz_title
-            FROM sessions s
-            JOIN quizzes z ON s.quiz_id = z.id
-            ORDER BY s.completed_at DESC
-        `).all();
+    const { quiz_id } = req.query;
+
+    let sql = `
+        SELECT s.id, s.quiz_id, s.participant_name, s.score, s.time_taken_seconds, s.completed_at, z.title as quiz_title
+        FROM sessions s
+        JOIN quizzes z ON s.quiz_id = z.id
+    `;
+
+    const params = [];
+    if (quiz_id) {
+        sql += ' WHERE s.quiz_id = ?';
+        params.push(quiz_id);
+    }
+
+    sql += ' ORDER BY s.completed_at DESC';
+
+    const sessions = db.prepare(sql).all(...params);
     res.json(sessions);
 });
 

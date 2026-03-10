@@ -1,8 +1,15 @@
 import express from 'express';
 import db from '../database.js';
 import { ADMIN_PASSWORD } from '../middleware/auth.js';
+import QRCode from 'qrcode';
+import fs from 'fs';
+import path from 'path';
 
 const router = express.Router();
+
+// Ensure QR code directory exists
+const QR_DIR = path.join(process.cwd(), 'public', 'img', 'qr');
+fs.mkdirSync(QR_DIR, { recursive: true });
 
 // Get all quizzes
 router.get('/quizzes', (req, res) => {
@@ -114,6 +121,49 @@ router.post('/submit', (req, res) => {
 router.get('/leaderboard/:quizId', (req, res) => {
     const leaderboard = db.prepare('SELECT participant_name, score, time_taken_seconds FROM sessions WHERE quiz_id = ? ORDER BY score DESC, time_taken_seconds ASC LIMIT 10').all(req.params.quizId);
     res.json(leaderboard);
+});
+
+// Generate QR code for quiz (cached to file)
+router.get('/quiz/:id/qr', async (req, res) => {
+    const quizId = req.params.id;
+    const quiz = db.prepare('SELECT id, is_visible FROM quizzes WHERE id = ?').get(quizId);
+
+    if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
+
+    const adminPwd = req.headers['x-admin-password'];
+    if (quiz.is_visible === 0 && adminPwd !== ADMIN_PASSWORD) {
+        return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const size = parseInt(req.query.size) || 300;
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const url = `${protocol}://${host}/?quizId=${quiz.id}`;
+
+    // Use cached file if available
+    const cacheFileName = `quiz-${quizId}-${size}.png`;
+    const cachePath = path.join(QR_DIR, cacheFileName);
+
+    try {
+        if (fs.existsSync(cachePath)) {
+            return res.sendFile(cachePath);
+        }
+
+        // Generate new QR code
+        await QRCode.toFile(cachePath, url, {
+            width: size,
+            margin: 2,
+            color: {
+                dark: '#000000',
+                light: '#ffffff'
+            }
+        });
+
+        res.sendFile(cachePath);
+    } catch (err) {
+        console.error('QR code generation error:', err);
+        res.status(500).json({ error: 'Failed to generate QR code' });
+    }
 });
 
 export default router;

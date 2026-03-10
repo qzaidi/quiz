@@ -495,6 +495,31 @@ input[type="color"] {
     background: #128C7E;
 }
 
+/* QR Code */
+.qr-code-container {
+    margin: 20px 0;
+    padding: 15px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: inline-block;
+}
+
+.qr-code {
+    width: 200px;
+    height: 200px;
+    display: block;
+    margin: 0 auto;
+}
+
+.qr-code-label {
+    margin: 10px 0 0 0;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
 .lang-select {
     padding: 8px;
     border-radius: 8px;
