@@ -269,7 +269,7 @@ function showLobby(quiz) {
 
     const ogTitle = document.querySelector('meta[property="og:title"]');
     if (ogTitle) {
-        ogTitle.content = `${quiz.title} - Trivia Master`;
+        ogTitle.content = `${quiz.title} - ${window.SITE_NAME || 'Trivia Master'}`;
     }
 
     const ogImage = document.querySelector('meta[property="og:image"]');

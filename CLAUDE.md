@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm install          # Install dependencies
 npm start            # Start the server (port 3000)
 npm run dev          # Start with file watching using --watch flag
+npm run build        # Build minified, content-hashed assets into dist/ (see BUILD.md)
 ```
 
 ### Docker Testing
@@ -28,7 +29,7 @@ This is a real-time trivia quiz platform built with vanilla JavaScript (no front
 - **Backend**: Node.js + Express (ES modules)
 - **Database**: SQLite (better-sqlite3) with synchronous queries
 - **Real-time**: WebSocket (ws library) for live participant counts
-- **Frontend**: Vanilla JavaScript, no bundler
+- **Frontend**: Vanilla JavaScript, no bundler. `npm run build` (scripts/build.js) minifies own JS/CSS into `dist/` with content-hashed filenames for cache-busting; the server serves `dist/` only in production when it exists, falling back to `public/`. See BUILD.md.
 
 ### Key Architecture Patterns
 

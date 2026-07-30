@@ -11,7 +11,7 @@ RUN npm install
 COPY . .
 
 # Build and minify assets for production
-#RUN NODE_ENV=production npm run build
+RUN npm run build
 
 # Remove dev dependencies to keep image small
 RUN npm prune --production

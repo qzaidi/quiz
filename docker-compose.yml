@@ -5,6 +5,8 @@ services:
       - ./quiz.db:/usr/src/app/quiz.db
     environment:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SITE_NAME=${SITE_NAME}
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL}
       - DEBUG=true
     ports:
       - "80:3000"

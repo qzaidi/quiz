@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Build output
+dist/
+
 # Database
 quiz.db
 quiz.test.db

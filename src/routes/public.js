@@ -4,12 +4,18 @@ import { ADMIN_PASSWORD } from '../middleware/auth.js';
 import QRCode from 'qrcode';
 import fs from 'fs';
 import path from 'path';
+import { createHash } from 'crypto';
 
 const router = express.Router();
 
 // Ensure QR code directory exists
 const QR_DIR = path.join(process.cwd(), 'public', 'img', 'qr');
 fs.mkdirSync(QR_DIR, { recursive: true });
+
+// Site configuration (public)
+router.get('/config', (req, res) => {
+    res.json({ siteName: process.env.SITE_NAME || 'Trivia Master' });
+});
 
 // Get all quizzes
 router.get('/quizzes', (req, res) => {
@@ -136,12 +142,16 @@ router.get('/quiz/:id/qr', async (req, res) => {
     }
 
     const size = parseInt(req.query.size) || 300;
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const url = `${protocol}://${host}/?quizId=${quiz.id}`;
+    // Prefer the configured public URL (e.g. https://snapquiz.uk) so QR codes
+    // always encode the canonical address; fall back to the request's host.
+    const baseUrl = (process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+    const url = `${baseUrl}/?quizId=${quiz.id}`;
 
-    // Use cached file if available
-    const cacheFileName = `quiz-${quizId}-${size}.png`;
+    // Use cached file if available. The cache key includes a hash of the
+    // encoded URL so a host/config change can never serve a stale QR code
+    // pointing at the old address.
+    const urlHash = createHash('sha256').update(url).digest('hex').slice(0, 8);
+    const cacheFileName = `quiz-${quizId}-${size}-${urlHash}.png`;
     const cachePath = path.join(QR_DIR, cacheFileName);
 
     try {

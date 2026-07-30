@@ -64,3 +64,30 @@ function renderQuestion(q, language, showCorrectAnswer, isArchived, elements) {
  * Make functions available globally
  */
 window.renderQuestion = renderQuestion;
+
+// -- Site name configuration (from /api/config, backed by SITE_NAME env var) --
+window.SITE_NAME = 'Trivia Master';
+
+fetch('/api/config')
+    .then(res => res.json())
+    .then(cfg => {
+        if (!cfg.siteName || cfg.siteName === window.SITE_NAME) return;
+        window.SITE_NAME = cfg.siteName;
+
+        // Override app_title translations so a custom site name wins in every language
+        if (window.translations) {
+            for (const lang of Object.keys(window.translations)) {
+                window.translations[lang].app_title = cfg.siteName;
+            }
+        }
+
+        // Update document title and OG tags
+        document.title = document.title.replace(/Trivia Master/g, cfg.siteName);
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.content = ogTitle.content.replace(/Trivia Master/g, cfg.siteName);
+
+        // Update header if it already shows the default name
+        const h1 = document.querySelector('header h1');
+        if (h1) h1.textContent = h1.textContent.replace(/Trivia Master/g, cfg.siteName);
+    })
+    .catch(() => { /* keep default site name */ });

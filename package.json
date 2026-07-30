@@ -6,6 +6,7 @@
   "scripts": {
     "start": "NODE_ENV=production node src/app.js",
     "dev": "node --watch src/app.js",
+    "build": "node scripts/build.js",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
