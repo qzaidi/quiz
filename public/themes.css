@@ -1,0 +1,87 @@
+/* =============================================================================
+   Theme definitions.
+   A theme is a set of CSS custom properties ("tokens") consumed by style.css.
+   Switching themes = setting data-theme on <html> (see common.js setUITheme).
+   The default (no attribute / data-theme="minimal") is the minimal theme.
+   ============================================================================= */
+
+:root {
+    /* Shared tokens (same in every theme) */
+    --font-main: 'Inter', sans-serif;
+    --font-arabic: 'Noto Nastaliq Urdu', 'Vazirmatn', sans-serif;
+    --font-devanagari: 'Noto Sans Devanagari', sans-serif;
+    --success: #10b981;
+    --error: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --neutral: #64748b;
+
+    /* Per-quiz dynamic overrides (set inline by app.js applyTheme) */
+    --theme-primary: var(--accent);
+    --theme-bg: var(--bg-color);
+}
+
+/* -----------------------------------------------------------------------------
+   Minimal (default): light, neutral, single accent. Mobile-first.
+   ----------------------------------------------------------------------------- */
+:root,
+:root[data-theme="minimal"] {
+    --bg-color: #fafaf9;
+    --bg-image: none;
+    --card-bg: #ffffff;
+    --text-primary: #1c1917;
+    --text-secondary: #78716c;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-soft: rgba(79, 70, 229, 0.08);
+    --border-color: #e7e5e4;
+    --input-bg: #ffffff;
+    --radius: 12px;
+    --radius-lg: 20px;
+    --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
+    --shadow: 0 1px 3px rgba(28, 25, 23, 0.05), 0 10px 30px rgba(28, 25, 23, 0.06);
+    --title-color: var(--text-primary);
+    --title-gradient: none;
+}
+
+/* Minimal-only component tweaks: frosted sticky header on phones.
+   Based on --theme-bg so it follows per-quiz background colors too. */
+:root:not([data-theme="classic"]) header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin: 0 -20px;
+    padding: 14px 20px;
+    background: color-mix(in srgb, var(--theme-bg) 82%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+@media (max-width: 480px) {
+    :root:not([data-theme="classic"]) header {
+        margin: 0 -16px;
+        padding: 12px 16px;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Classic: the original Trivia Master look.
+   ----------------------------------------------------------------------------- */
+:root[data-theme="classic"] {
+    --bg-color: #f8fafc;
+    --bg-image: url('bg-pattern.png');
+    --card-bg: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --accent: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --accent-soft: rgba(139, 92, 246, 0.1);
+    --border-color: rgba(0, 0, 0, 0.1);
+    --input-bg: #ffffff;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --title-color: transparent;
+    --title-gradient: linear-gradient(to right, #c084fc, var(--theme-primary));
+}
