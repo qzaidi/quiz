@@ -200,6 +200,25 @@ function showHome() {
 }
 
 // -- Theming --
+// Parse any CSS color via canvas and report whether it's dark, so text drawn
+// directly on the page background can flip to a light color (see --on-bg).
+function isDarkColor(color) {
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.fillStyle = color;
+    const c = ctx.fillStyle; // normalized to #rrggbb or rgb()/rgba()
+    let r, g, b;
+    if (c.startsWith('#')) {
+        r = parseInt(c.slice(1, 3), 16);
+        g = parseInt(c.slice(3, 5), 16);
+        b = parseInt(c.slice(5, 7), 16);
+    } else {
+        const m = c.match(/[\d.]+/g);
+        if (!m || m.length < 3) return false;
+        [r, g, b] = m.map(Number);
+    }
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
+}
+
 function applyTheme(theme) {
     const root = document.documentElement;
     const bg = document.querySelector('.app-background');
@@ -209,6 +228,9 @@ function applyTheme(theme) {
         if (theme.backgroundColor) {
             root.style.setProperty('--theme-bg', theme.backgroundColor);
             document.body.style.backgroundColor = theme.backgroundColor;
+            root.style.setProperty('--on-bg', isDarkColor(theme.backgroundColor) ? '#f5f5f4' : '#1c1917');
+        } else {
+            root.style.removeProperty('--on-bg');
         }
         if (theme.backgroundImageUrl) {
             bg.style.backgroundImage = `url('${theme.backgroundImageUrl}')`;
@@ -222,9 +244,11 @@ function applyTheme(theme) {
 function resetTheme() {
     const root = document.documentElement;
     const bg = document.querySelector('.app-background');
-    root.style.setProperty('--theme-primary', '#8b5cf6');
-    root.style.setProperty('--theme-bg', '#0f172a');
-    document.body.style.backgroundColor = '#0f172a';
+    // Clear per-quiz overrides so the active CSS theme's tokens take over
+    root.style.removeProperty('--theme-primary');
+    root.style.removeProperty('--theme-bg');
+    root.style.removeProperty('--on-bg');
+    document.body.style.backgroundColor = '';
     bg.style.backgroundImage = 'none';
 }
 

@@ -91,3 +91,38 @@ fetch('/api/config')
         if (h1) h1.textContent = h1.textContent.replace(/Trivia Master/g, cfg.siteName);
     })
     .catch(() => { /* keep default site name */ });
+
+// -- UI theme (visual style) management --
+// Themes are pure CSS token blocks in themes.css, keyed off data-theme on <html>.
+// The initial theme is applied by an inline <head> script to avoid a flash of
+// the wrong theme; this just keeps the picker in sync and persists changes.
+const UI_THEME_STORAGE_KEY = 'ui-theme';
+const UI_THEME_DEFAULT = 'minimal';
+
+function getUITheme() {
+    try {
+        return localStorage.getItem(UI_THEME_STORAGE_KEY) || UI_THEME_DEFAULT;
+    } catch (e) {
+        return UI_THEME_DEFAULT;
+    }
+}
+
+function setUITheme(themeId) {
+    document.documentElement.dataset.theme = themeId;
+    try {
+        localStorage.setItem(UI_THEME_STORAGE_KEY, themeId);
+    } catch (e) { /* private mode etc. — theme just won't persist */ }
+    syncThemePickers();
+}
+
+function syncThemePickers() {
+    const current = document.documentElement.dataset.theme || getUITheme();
+    document.querySelectorAll('.theme-select').forEach(sel => {
+        sel.value = current;
+    });
+}
+
+window.getUITheme = getUITheme;
+window.setUITheme = setUITheme;
+
+document.addEventListener('DOMContentLoaded', syncThemePickers);

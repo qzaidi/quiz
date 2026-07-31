@@ -18,7 +18,12 @@
     <link rel="icon" href="logo.png" type="image/png">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Nastaliq+Urdu:wght@400;700&family=Vazirmatn:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="themes.css">
     <link rel="stylesheet" href="style.css">
+    <script>
+        // Apply the saved UI theme before first paint to avoid a flash of the wrong theme
+        try { document.documentElement.dataset.theme = localStorage.getItem('ui-theme') || 'minimal'; } catch (e) { }
+    </script>
 </head>
 
 <body>
@@ -27,11 +32,15 @@
         <header>
             <h1>Trivia Master</h1>
             <div class="header-controls">
+                <select class="lang-select theme-select" onchange="setUITheme(this.value)" title="Theme">
+                    <option value="minimal">Minimal</option>
+                    <option value="classic">Classic</option>
+                </select>
                 <select id="ui-language-select" class="lang-select" onchange="changeUILanguage(this.value)">
-                    <option value="en">English</option>
-                    <option value="ur">اردو</option>
-                    <option value="fa">فارسی</option>
-                    <option value="hi">हिन्दी</option>
+                    <option value="en">En</option>
+                    <option value="ur">Ur</option>
+                    <option value="fa">Fa</option>
+                    <option value="hi">Hi</option>
                 </select>
                 <button id="admin-login-btn" onclick="window.location.href='admin.html'" class="icon-btn">⚙️</button>
             </div>

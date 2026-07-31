@@ -30,6 +30,7 @@ const distDir = join(__dirname, '../dist');
 
 // Our own cache-busted assets (vendored files under lib/ keep their names)
 const hashedAssets = [
+    'themes.css',
     'style.css',
     'locales.js',
     'common.js',

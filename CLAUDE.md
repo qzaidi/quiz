@@ -41,6 +41,8 @@ This is a real-time trivia quiz platform built with vanilla JavaScript (no front
 
 **Time-based Access Control**: Quizzes have `start_time` and optional `end_time`. The server uses wall-clock time comparisons (converting to local ISO format) to determine if a quiz can be joined or if questions can be fetched. After `end_time`, the quiz becomes "archived" and correct answers are included in API responses.
 
+**UI Themes**: Visual themes are pure CSS token blocks in `public/themes.css`, keyed off `data-theme` on `<html>` (`minimal` default, `classic` = original look). `style.css` is theme-agnostic and consumes the tokens (`--bg-color`, `--accent`, `--radius`, etc.) — new styles should use tokens, not hardcoded colors. The user picks a theme via the header picker; it's persisted in `localStorage('ui-theme')` and applied pre-paint by an inline `<head>` script in each HTML file. This is separate from per-quiz color themes (the `theme` JSON column), which override `--theme-primary`/`--theme-bg` on top of any UI theme.
+
 **Multi-language Translations**:
 - Quizzes have a `languages` JSON array (e.g., `["en", "es"]`)
 - Questions have a `translations` JSON column: `{ "es": { "text": "...", "hint": "...", "options": [...] } }`

@@ -6,8 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Trivia Master</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="themes.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="lib/jquery.dataTables.min.css">
+    <script>
+        // Apply the saved UI theme before first paint to avoid a flash of the wrong theme
+        try { document.documentElement.dataset.theme = localStorage.getItem('ui-theme') || 'minimal'; } catch (e) { }
+    </script>
 </head>
 
 <body>
@@ -15,7 +20,13 @@
     <div class="app-container">
         <header>
             <h1>Trivia Master - Admin</h1>
-            <button onclick="window.location.href='index.html'" class="small-btn">← Public Site</button>
+            <div class="header-controls">
+                <select class="lang-select theme-select" onchange="setUITheme(this.value)" title="Theme">
+                    <option value="minimal">Minimal</option>
+                    <option value="classic">Classic</option>
+                </select>
+                <button onclick="window.location.href='index.html'" class="small-btn">← Public Site</button>
+            </div>
         </header>
 
         <main id="main-content">
@@ -73,7 +84,7 @@
                 </div>
 
                 <!-- Export Status -->
-                <div id="export-status" class="admin-panel hidden" style="background: rgba(139, 92, 246, 0.2);">
+                <div id="export-status" class="admin-panel hidden" style="background: var(--accent-soft);">
                     <p id="export-status-text">Exporting questions...</p>
                 </div>
 
@@ -82,9 +93,9 @@
                     <h3>Add Question to: <span id="selected-quiz-title"></span></h3>
 
                     <div class="bulk-import-section"
-                        style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        style="margin-bottom: 20px; padding: 15px; background: var(--accent-soft); border-radius: 12px;">
                         <h4>📥 Bulk Import via CSV</h4>
-                        <p style="font-size: 0.9em; margin-bottom: 10px; color: #ccc;">
+                        <p style="font-size: 0.9em; margin-bottom: 10px; color: var(--text-secondary);">
                             Expected Columns:
                             <code>question_en, hint_en, opt1_en, opt2_en, opt3_en, opt4_en, correct_ans_index</code><br>
                             (Add other languages like <code>question_ur</code>, <code>hint_ur</code>, <code>opt1_ur</code>, etc.)

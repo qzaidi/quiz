@@ -159,12 +159,15 @@ test.describe('Screenshot Capture', () => {
       }
     });
 
-    // Now navigate to view the leaderboard
+    // Now navigate to the lobby and open the leaderboard view
     await page.goto(`/?quizId=${sampleQuizId}`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
 
-    // Capture the view (might show leaderboard if quiz is complete)
+    await page.locator('#view-leaderboard-btn').click();
+    await page.waitForTimeout(500);
+
+    // Capture the leaderboard
     await page.screenshot({
       path: 'screenshots/leaderboard.png',
       fullPage: true
